@@ -21,7 +21,7 @@ import numpy as np
 import random
 import sys
 import os
-from protect_loop import Protect_loop
+from looptools import Loop_handler
 from tqdm import trange
 
 
@@ -528,7 +528,7 @@ if __name__ == '__main__' :
 			import time
 			start = time.time()
 
-			with Protect_loop() as interruption :
+			with Loop_handler() as interruption :
 
 				while not interruption() and n_ep < EP_MAX :
 

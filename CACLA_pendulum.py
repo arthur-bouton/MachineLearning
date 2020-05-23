@@ -18,7 +18,7 @@ from scipy.integrate import odeint
 from matplotlib.pyplot import *
 from mpl_toolkits.mplot3d import Axes3D
 from neural_networks import RBF, MLP
-from protect_loop import Protect_loop
+from looptools import Loop_handler
 import os
 
 
@@ -134,7 +134,7 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 
 	#random.seed( 0 )
 
-	with Protect_loop() as interruption :
+	with Loop_handler() as interruption :
 
 		while not interruption() and ntrial < 20000 :
 
