@@ -20,7 +20,6 @@ from collections import deque
 import random
 import sys
 import os
-from looptools import Loop_handler
 from tqdm import trange
 
 
@@ -357,6 +356,7 @@ class DDPG() :
 if __name__ == '__main__' :
 
 	from pendulum import Pendulum
+	from looptools import Loop_handler, Monitor
 
 
 	# Identifier name for the data:
@@ -412,6 +412,8 @@ if __name__ == '__main__' :
 
 			import time
 			start = time.time()
+
+			reward_graph = Monitor( titles='Average reward per trial', xlabel='trials', keep=False )
 
 			with Loop_handler() as interruption :
 
@@ -470,6 +472,7 @@ if __name__ == '__main__' :
 						eval_env.print_eval()
 						sys.stdout.flush()
 						ddpg.reward_summary( eval_env.get_Rt() )
+						reward_graph.add_data( eval_env.get_Rt(), n_ep )
 
 
 			end = time.time()

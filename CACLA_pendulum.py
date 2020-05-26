@@ -18,7 +18,7 @@ from scipy.integrate import odeint
 from matplotlib.pyplot import *
 from mpl_toolkits.mplot3d import Axes3D
 from neural_networks import RBF, MLP
-from looptools import Loop_handler
+from looptools import Loop_handler, Monitor
 import os
 
 
@@ -134,6 +134,8 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 
 	#random.seed( 0 )
 
+	reward_graph = Monitor( titles='Average reward per trial', xlabel='trials', keep=False )
+
 	with Loop_handler() as interruption :
 
 		while not interruption() and ntrial < 20000 :
@@ -179,9 +181,10 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 				Qa = actor.end_of_batch()[0]
 				Qc = critic.end_of_batch()[0]
 
-				if sys.argv[-1] != 'quick' or ntrial%100 == 0 :
+				if sys.argv[-1] != 'quick' or ntrial%20 == 0 :
 					t, Rt, success_rate, Nt = quick_eval( lambda x : umax*( clip( actor.eval( scaling( x ) ), -1, 1 ) ) )
 					print 'Eval: %i | t: %4.1f | Rt: %+7.4f | Success rate: %5.1f %% | Nt: %+3d | Qa: %7.2g | Qc: %7.2g' % ( ntrial, t, Rt, success_rate, Nt, Qa, Qc )
+					reward_graph.add_data( Rt, ntrial )
 				else :
 					Rt /= t/step
 					success_rate = sum( [ ( 1. if abs( a[0] ) < 10 else 0. ) for a in x_data ] )/len( x_data )*100
