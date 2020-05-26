@@ -1,3 +1,8 @@
+""" 
+Tools to monitor and have control during algorithm progress loops.
+
+Author: Arthur Bouton [arthur.bouton@gadz.org]
+"""
 import signal
 
 
@@ -5,14 +10,28 @@ class Loop_handler :
 	""" 
 	Context manager which allows the SIGINT signal to be processed asynchronously.
 
-	Author: Arthur Bouton [arthur.bouton@gadz.org]
+	Example
+	-------
+	with Loop_handler() as interruption :
+		while not interruption() :
+			
+			(do something)
+
+			if interruption() :
+				break
+
+			(do something)
+
 	"""
 
 	def __init__( self ) :
 		self._end = False
 	
-	def check_interruption( self ) :
-		return self._end
+	def check_interruption( self, reset=False ) :
+		state = self._end
+		if reset :
+			self._end = False
+		return state
 
 	def __enter__( self ) :
 
@@ -37,12 +56,61 @@ import sys
 
 class Monitor :
 	""" 
-	Plot variables incrementally.
+	A class to plot variables incrementally on a persistent figure.
 
-	Author: Arthur Bouton [arthur.bouton@gadz.org]
+	Parameters
+	----------
+	n_var : integer or iterable of integers, optional, default: 1
+		The number of variables to be plotted on each subplot.
+		If a unique integer is given, there will be only one graph.
+		Otherwise, the length of the iterable defines the number of subplots.
+	labels :  string or list of string, optional, default: None
+		Labels for each variable to be plotted.
+		If a subplot contains several variables, it will be displayed as a
+		legend. Otherwise, it will be a label on the y-axis.
+		If a unique string is given, it will be applied to the first variable.
+	titles : string or list of string, optional, default: None
+		Titles for each subplot.
+		If a unique string is given, it will be applied to the first subplot.
+	xlabel : string, optional, default: None
+		Label for the x-axis.
+	name : string, optional, default: None
+		Title used by the figure window.
+		If None, the name of the calling script is used.
+	log : boolean, integer or iterable of integers, optional, default: False
+		Whether to use logarithmic scales.
+		If True, all subplots will do.
+		If a unique integer is given, only the nth subplot will do.
+		If a list is provided, each integer specifies the subplots
+		requiring a logarithmic scale.
+	keep : boolean, optional, default: True
+		Whether to make the figure persistent after the end of the script.
+		True by default.
+	xstep : integer or float, optional, default: 1
+		The default gap to use between each x-axis value when adding new data.
+		It is ignored when the method `add_data` is called with its second argument.
+	plot_kwargs : dictionary or iterable of dictionaries, optional, default: None
+		A dictionary of keyword arguments to be passed to every call of
+		`matplotlib.axes.Axes.plot` or an iterable of dictionaries for each
+		variable to plot (can be an empty dictionary).
+	
+	Example
+	-------
+	To plot two variables alpha and beta on a same graph, with beta using a dashed line, and a third variable gamma on a second graph below, do:
+
+		graph = Monitor( [ 2, 1 ], titles=[ 'First graph', 'Second graph' ], labels=[ '$\\alpha$', '$\\beta$', '$\gamma$' ], plot_kwargs=[{},{'ls': '--'}] )
+
+		for i in range( 100 ) :
+
+			alpha = i**2
+			beta = i**3
+			gamma = 1/( 1 + i )
+
+			graph.add_data( [ alpha, beta, gamma ] )
+
 	"""
 
-	def __init__( self, n_var=1, labels=None, titles=None, xlabel=None, name=None, log=False, keep=True, x_step=1, plot_kwargs=None ) :
+	def __init__( self, n_var=1, labels=None, titles=None, xlabel=None, name=None, log=False, keep=True, xstep=1, plot_kwargs=None ) :
 
 		if not isinstance( n_var, collections.Iterable ) : n_var = [ n_var ]
 
@@ -74,7 +142,7 @@ class Monitor :
 
 				self._ydata.append( [] )
 
-				if isinstance( plot_kwargs, list ) :
+				if isinstance( plot_kwargs, collections.Iterable ) :
 					if len( plot_kwargs ) > sum( n_var[:i] ) + j :
 						kwargs = plot_kwargs[sum( n_var[:i] ) + j]
 					else :
@@ -106,39 +174,71 @@ class Monitor :
 		# Set logarithmic scale for the specified subplot(s):
 		if log :
 			for i, ax in enumerate( self.axes ) :
-				if log is True or i + 1 in log :
+				if log is True or log == i + 1 or isinstance( log, collections.Iterable ) and i + 1 in log :
 					ax.set_yscale( 'symlog' )
 
 		# Set the interactive mode so that the figure can be displayed without blocking:
 		plt.ion()
 		plt.show()
 
-		self.x_step = x_step
+		# Create the window:
+		self._update_figure()
 
+		# Make the window persistent:
 		if keep :
 			def keep_figure_open() :
 				plt.ioff()
 				plt.show()
 			atexit.register( keep_figure_open )
-	
-	def append( self, new_ydata, new_xdata=None ) :
 
-		if not isinstance( new_ydata, collections.Iterable ) : new_ydata = [ new_ydata ]
+		self.xstep = xstep
+	
+	def add_data( self, new_ydata, new_xdata=None ) :
+		""" 
+		Add new data to the figure.
+
+		Parameters
+		----------
+		new_ydata : value, iterable of values or iterable of iterables of values
+			The list of the next values to add to each variable to plot or a list of lists of successive values
+			to add to each of these variables.
+			If there is only one variable to be plotted, new_ydata can be interpreted directly as its next value
+			or the list of its next successive values.
+		new_xdata : value or iterable of values, optional, default: None
+			The x-axis value for each successive value provided by new_ydata, regardless of the number of variables.
+			If None (default), `xstep` is used as a gap between each x-axis value (1 by default).
+		"""
+
+		if len( self._ydata ) == 1 and ( not isinstance( new_ydata, collections.Iterable )
+		                              or not isinstance( new_ydata[0], collections.Iterable ) ) :
+			new_ydata = [ new_ydata ]
+
+		if not isinstance( new_ydata[0], collections.Iterable ) :
+			new_ydata = [ [ y ] for y in new_ydata ]
 
 		if len( new_ydata ) != len( self._ydata ) :
-			raise ValueError( 'Wrong argument new_ydata: len( new_ydata ) = %i the number of variables to plot is %i'
+			raise ValueError( 'Wrong argument new_ydata: len( new_ydata ) = %i while the number of variables to plot is %i'
 			                   % ( len( new_ydata ), len( self._ydata ) ) )
 
-		if new_xdata is not None :
-			x_next = new_xdata
-		elif self._xdata :
-			x_next = self._xdata[-1] + self.x_step
-		else :
-			x_next = self.x_step
+		for var in new_ydata :
+			if not isinstance( var, collections.Iterable ) or len( var ) != len( new_ydata[0] ) :
+				raise ValueError( 'Wrong argument new_ydata: the data do not have all the same length' )
 
-		self._xdata.append( x_next )
-		for ydata, new_value in zip( self._ydata, new_ydata ) :
-			ydata.append( new_value )
+		if new_xdata is not None :
+			if not isinstance( new_xdata, collections.Iterable ) : new_xdata = [ new_xdata ]
+
+			if len( new_xdata ) != len( new_ydata[0] ) :
+				raise ValueError( 'Wrong argument new_xdata: len( new_xdata ) = %i while there is %i new data to be added'
+				                   % ( len( new_xdata ), len( new_ydata[0] ) ) )
+		else :
+			new_xdata = [ self._xdata[-1] + self.xstep if self._xdata else self.xstep ]
+			for _ in range( len( new_ydata[0] ) - 1 ) :
+				new_xdata.append( new_xdata[-1] + self.xstep )
+
+		# Add the new data:
+		self._xdata.extend( new_xdata )
+		for ydata, new_values in zip( self._ydata, new_ydata ) :
+			ydata.extend( new_values )
 
 		self._update_figure()
 
@@ -158,6 +258,33 @@ class Monitor :
 		except :
 			pass
 	
+	def get_data( self ) :
+		"""
+		Return the data used to plot the current figure.
+		It can be used to modify or restore the data plotted by doing for example:
+
+			data = monitor.get_data()
+			monitor.clear()
+			monitor.add_data( *data )
+
+		Returns
+		-------
+			( ydata, xdata )
+			ydata : list of list of values for each variable.
+			xdata : list values for the x-axis.
+		"""
+
+		return self._ydata, self._xdata
+	
+	def clear( self ) :
+		""" Clear the data and the figure. """
+
+		self._xdata = []
+		self._ydata = [ [] for _ in self._ydata ]
+
+		self._update_figure()
+	
 	def close( self ) :
+		""" Close the figure. """
 
 		plt.close( self.fig )
