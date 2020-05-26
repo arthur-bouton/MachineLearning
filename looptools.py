@@ -76,7 +76,7 @@ class Monitor :
 		Label for the x-axis.
 	name : string, optional, default: None
 		Title used by the figure window.
-		If None, the name of the calling script is used.
+		If None (default), the name of the calling script is used.
 	log : boolean, integer or iterable of integers, optional, default: False
 		Whether to use logarithmic scales.
 		If True, all subplots will do.
@@ -89,6 +89,10 @@ class Monitor :
 	xstep : integer or float, optional, default: 1
 		The default gap to use between each x-axis value when adding new data.
 		It is ignored when the method `add_data` is called with its second argument.
+	datamax : integer, optional, default: None
+		The maximum amount of consecutive data to store and display.
+		Past this limit, oldest data are scrapped.
+		If None (default), all the data are kept until the method `clear` is called.
 	plot_kwargs : dictionary or iterable of dictionaries, optional, default: None
 		A dictionary of keyword arguments to be passed to every call of
 		`matplotlib.axes.Axes.plot` or an iterable of dictionaries for each
@@ -110,7 +114,10 @@ class Monitor :
 
 	"""
 
-	def __init__( self, n_var=1, labels=None, titles=None, xlabel=None, name=None, log=False, keep=True, xstep=1, plot_kwargs=None ) :
+	def __init__( self, n_var=1, labels=None, titles=None, xlabel=None, name=None, log=False, keep=True, xstep=1, datamax=None, plot_kwargs=None ) :
+
+		self.xstep = xstep
+		self.datamax = datamax
 
 		if not isinstance( n_var, collections.Iterable ) : n_var = [ n_var ]
 
@@ -190,8 +197,6 @@ class Monitor :
 				plt.ioff()
 				plt.show()
 			atexit.register( keep_figure_open )
-
-		self.xstep = xstep
 	
 	def add_data( self, new_ydata, new_xdata=None ) :
 		""" 
@@ -243,6 +248,12 @@ class Monitor :
 		self._update_figure()
 
 	def _update_figure( self ) :
+		
+		if self.datamax is not None and len( self._xdata ) > self.datamax :
+			trim_start = len( self._xdata ) - self.datamax
+			del self._xdata[0:trim_start]
+			for ydata in self._ydata :
+				del ydata[0:trim_start]
 
 		for i, line in enumerate( self._lines ) :
 			line.set_xdata( self._xdata )
