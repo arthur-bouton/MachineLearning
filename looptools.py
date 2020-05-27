@@ -214,16 +214,15 @@ class Monitor :
 			If None (default), `xstep` is used as a gap between each x-axis value (1 by default).
 		"""
 
-		if len( self._ydata ) == 1 and ( not isinstance( new_ydata, collections.Iterable )
-		                              or not isinstance( new_ydata[0], collections.Iterable ) ) :
+		if not isinstance( new_ydata, collections.Iterable ) or len( self._ydata ) == 1 and not isinstance( new_ydata[0], collections.Iterable ) :
 			new_ydata = [ new_ydata ]
 
 		if not isinstance( new_ydata[0], collections.Iterable ) :
 			new_ydata = [ [ y ] for y in new_ydata ]
 
 		if len( new_ydata ) != len( self._ydata ) :
-			raise ValueError( 'Wrong argument new_ydata: len( new_ydata ) = %i while the number of variables to plot is %i'
-			                   % ( len( new_ydata ), len( self._ydata ) ) )
+			raise ValueError( 'Wrong argument new_ydata: %i element%s provided while the number of variables to plot is %i'
+			                   % ( len( new_ydata ), 's' if len( new_ydata ) > 1 else '', len( self._ydata ) ) )
 
 		for var in new_ydata :
 			if not isinstance( var, collections.Iterable ) or len( var ) != len( new_ydata[0] ) :
@@ -233,8 +232,8 @@ class Monitor :
 			if not isinstance( new_xdata, collections.Iterable ) : new_xdata = [ new_xdata ]
 
 			if len( new_xdata ) != len( new_ydata[0] ) :
-				raise ValueError( 'Wrong argument new_xdata: len( new_xdata ) = %i while there is %i new data to be added'
-				                   % ( len( new_xdata ), len( new_ydata[0] ) ) )
+				raise ValueError( 'Wrong argument new_xdata: %i element%s provided while the length of the data to be added is %i'
+				                   % ( len( new_xdata ), 's' if len( new_xdata ) > 1 else '', len( new_ydata[0] ) ) )
 		else :
 			new_xdata = [ self._xdata[-1] + self.xstep if self._xdata else self.xstep ]
 			for _ in range( len( new_ydata[0] ) - 1 ) :
