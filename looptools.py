@@ -93,16 +93,18 @@ class Monitor :
 		The maximum amount of consecutive data to store and display.
 		Past this limit, oldest data are scrapped.
 		If None (default), all the data are kept until the method `clear` is called.
-	plot_kwargs : dictionary or iterable of dictionaries, optional, default: None
-		A dictionary of keyword arguments to be passed to every call of
-		`matplotlib.axes.Axes.plot` or an iterable of dictionaries for each
-		variable to plot (can be an empty dictionary).
+	plot_kwargs : dictionary of dictionaries, optional, default: None
+		A dictionary containing dictionaries of keyword arguments to be passed
+		to the calls to `matplotlib.axes.Axes.plot`.
+		Each key has to be an integers corresponding to the number of the variable
+		the dictionary of arguments is to applied to.
+		If the key is 0, the dictionary is applied to every plot.
 	
 	Example
 	-------
-	To plot two variables alpha and beta on a same graph, with beta using a dashed line, and a third variable gamma on a second graph below, do:
+	To plot two variables alpha and beta on a same graph and a third variable gamma on a second graph below using a dashed line, do:
 
-		graph = Monitor( [ 2, 1 ], titles=[ 'First graph', 'Second graph' ], labels=[ '$\\alpha$', '$\\beta$', '$\gamma$' ], plot_kwargs=[{},{'ls': '--'}] )
+		graph = Monitor( [ 2, 1 ], titles=[ 'First graph', 'Second graph' ], labels=[ '$\\alpha$', '$\\beta$', '$\gamma$' ], plot_kwargs={3: {'ls':'--'}} )
 
 		for i in range( 100 ) :
 
@@ -136,12 +138,6 @@ class Monitor :
 		self._xdata = []
 		self._ydata = []
 		self._lines = []
-
-		if isinstance( plot_kwargs, dict ) :
-			kwargs = plot_kwargs
-		else :
-			kwargs = {}
-
 		for i, ax in enumerate( self.axes ) :
 			if n_var[i] < 1 :
 				raise ValueError( 'Wrong argument n_var: there cannot be less than one variable on a subplot' )
@@ -149,11 +145,14 @@ class Monitor :
 
 				self._ydata.append( [] )
 
-				if isinstance( plot_kwargs, collections.Iterable ) :
-					if len( plot_kwargs ) > sum( n_var[:i] ) + j :
-						kwargs = plot_kwargs[sum( n_var[:i] ) + j]
-					else :
-						kwargs = {}
+				# Add extra plotting options:
+				kwargs = {}
+				if plot_kwargs is not None :
+					if 0 in plot_kwargs :
+						kwargs.update( plot_kwargs[0] )
+					i_line = sum( n_var[:i] ) + j + 1
+					if i_line in plot_kwargs :
+						kwargs.update( plot_kwargs[i_line] )
 
 				self._lines.append( ax.plot( [], **kwargs )[0] )
 
