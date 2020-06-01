@@ -104,7 +104,7 @@ class Monitor :
 	-------
 	To plot two variables alpha and beta on a same graph and a third variable gamma on a second graph below using a dashed line, do:
 
-		graph = Monitor( [ 2, 1 ], titles=[ 'First graph', 'Second graph' ], labels=[ '$\\alpha$', '$\\beta$', '$\gamma$' ], plot_kwargs={3: {'ls':'--'}} )
+		monitor = Monitor( [ 2, 1 ], titles=[ 'First graph', 'Second graph' ], labels=[ '$\\alpha$', '$\\beta$', '$\gamma$' ], plot_kwargs={3: {'ls':'--'}} )
 
 		for i in range( 100 ) :
 
@@ -112,7 +112,7 @@ class Monitor :
 			beta = i**3
 			gamma = 1/( 1 + i )
 
-			graph.add_data( alpha, beta, gamma )
+			monitor.add_data( alpha, beta, gamma )
 
 	"""
 
@@ -242,7 +242,7 @@ class Monitor :
 		self._update_figure()
 
 	def _update_figure( self ) :
-		
+
 		if self.datamax is not None and len( self._xdata ) > self.datamax :
 			trim_start = len( self._xdata ) - self.datamax
 			del self._xdata[0:trim_start]
@@ -262,7 +262,7 @@ class Monitor :
 			self.fig.canvas.flush_events()
 		except :
 			pass
-	
+
 	def get_data( self ) :
 		"""
 		Return the data used to plot the current figure.
@@ -287,8 +287,65 @@ class Monitor :
 		self._ydata = [ [] for _ in self._ydata ]
 
 		self._update_figure()
-	
+
 	def close( self ) :
 		""" Close the figure. """
 
 		plt.close( self.fig )
+
+	def __len__( self ) :
+
+		return len( self._xdata )
+
+	def __getitem__( self, key ) :
+
+		return ( self._xdata[key], *( y[key] for y in self._ydata ) )
+
+	def __setitem__( self, key, data ) :
+
+		if isinstance( data, tuple ) and len( data ) == len( self._ydata ) + 1 :
+			self._xdata[key] = data[0]
+			y_values = data[1:]
+		elif not isinstance( data, collections.Iterable ) and isinstance( key, slice ) :
+			y_values = [ [ data ]*len( self._xdata[key] ) ]
+		elif not isinstance( data, tuple ) :
+			y_values = [ data ]
+		else :
+			y_values = data
+
+		if len( y_values ) == 1 and len( self._ydata ) > 1 :
+			y_values = [ y_values[0] ]*len( self._ydata )
+		elif len( y_values ) != len( self._ydata ) :
+			raise ValueError( 'Wrong amount of right side elements: expecting 1, %i or %i elements but received %i'
+			                   % ( len( self._ydata ), len( self._ydata ) + 1, len( y_values ) ) )
+
+		for i, y in enumerate( self._ydata ) :
+			y[key] = y_values[i]
+
+		self._update_figure()
+
+	def __delitem__( self, key ) :
+
+		del self._xdata[key]
+		for i, y in enumerate( self._ydata ) :
+			del y[key]
+
+		self._update_figure()
+
+	def __call__( self, *data ) :
+		"""
+		When called directly, the data are replaced with the new ones.
+		It can be used to slice the data plotted by doing for example:
+
+			monitor( *monitor[a:b] )
+
+		Which is equivalent to:
+
+			del monitor[:a]
+			del monitor[b-a:]
+		"""
+
+		self._xdata = []
+		self._ydata = [ [] for _ in self._ydata ]
+
+		self.add_data( *data )
