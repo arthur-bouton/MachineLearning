@@ -112,7 +112,7 @@ class Monitor :
 			beta = i**3
 			gamma = 1/( 1 + i )
 
-			graph.add_data( [ alpha, beta, gamma ] )
+			graph.add_data( alpha, beta, gamma )
 
 	"""
 
@@ -197,51 +197,47 @@ class Monitor :
 				plt.show()
 			atexit.register( keep_figure_open )
 	
-	def add_data( self, new_ydata, new_xdata=None ) :
+	def add_data( self, *new_data ) :
 		""" 
 		Add new data to the figure.
 
 		Parameters
 		----------
-		new_ydata : value, iterable of values or iterable of iterables of values
-			The list of the next values to add to each variable to plot or a list of lists of successive values
-			to add to each of these variables.
-			If there is only one variable to be plotted, new_ydata can be interpreted directly as its next value
-			or the list of its next successive values.
-		new_xdata : value or iterable of values, optional, default: None
-			The x-axis value for each successive value provided by new_ydata, regardless of the number of variables.
-			If None (default), `xstep` is used as a gap between each x-axis value (1 by default).
+		new_data : value or iterable of values
+			Each argument is the value or list of next successive values to add to the corresponding variable
+			in their plot order.
+			Optionally, the corresponding x-axis value(s) can be specified as first argument. If not specified,
+			`xstep` is used as a gap between each x-axis value (1 by default).
 		"""
 
-		if not isinstance( new_ydata, collections.Iterable ) or len( self._ydata ) == 1 and not isinstance( new_ydata[0], collections.Iterable ) :
-			new_ydata = [ new_ydata ]
+		# Check the number of arguments provided:
+		n_y = len( self._ydata )
+		if len( new_data ) != n_y and len( new_data ) != n_y + 1 :
+			raise ValueError( 'Wrong amount of arguments for Monitor.add_data: expecting %i or %i arguments but received %i'
+			                   % ( n_y, n_y + 1, len( new_data ) ) )
 
-		if not isinstance( new_ydata[0], collections.Iterable ) :
-			new_ydata = [ [ y ] for y in new_ydata ]
+		# Make new_data a list of iterables:
+		new_data = [ [ values ] if not isinstance( values, collections.Iterable ) else values for values in new_data ]
 
-		if len( new_ydata ) != len( self._ydata ) :
-			raise ValueError( 'Wrong argument new_ydata: %i element%s provided while the number of variables to plot is %i'
-			                   % ( len( new_ydata ), 's' if len( new_ydata ) > 1 else '', len( self._ydata ) ) )
+		# Check the length of every argument:
+		for values in new_data :
+			if len( values ) != len( new_data[0] ) :
+				raise ValueError( 'Wrong arguments for Monitor.add_data: the data do not have all the same length' )
 
-		for var in new_ydata :
-			if not isinstance( var, collections.Iterable ) or len( var ) != len( new_ydata[0] ) :
-				raise ValueError( 'Wrong argument new_ydata: the data do not have all the same length' )
-
-		if new_xdata is not None :
-			if not isinstance( new_xdata, collections.Iterable ) : new_xdata = [ new_xdata ]
-
-			if len( new_xdata ) != len( new_ydata[0] ) :
-				raise ValueError( 'Wrong argument new_xdata: %i element%s provided while the length of the data to be added is %i'
-				                   % ( len( new_xdata ), 's' if len( new_xdata ) > 1 else '', len( new_ydata[0] ) ) )
+		# Characterize the x-axis and y-axis values:
+		if len( new_data ) == n_y + 1 :
+			new_x_values = new_data[0]
+			new_y_values = new_data[1:]
 		else :
-			new_xdata = [ self._xdata[-1] + self.xstep if self._xdata else self.xstep ]
-			for _ in range( len( new_ydata[0] ) - 1 ) :
-				new_xdata.append( new_xdata[-1] + self.xstep )
+			new_x_values = [ self._xdata[-1] + self.xstep if self._xdata else self.xstep ]
+			for _ in range( len( new_data[0] ) - 1 ) :
+				new_x_values.append( new_x_values[-1] + self.xstep )
+			new_y_values = new_data
 
 		# Add the new data:
-		self._xdata.extend( new_xdata )
-		for ydata, new_values in zip( self._ydata, new_ydata ) :
-			ydata.extend( new_values )
+		self._xdata.extend( new_x_values )
+		for ydata, values in zip( self._ydata, new_y_values ) :
+			ydata.extend( values )
 
 		self._update_figure()
 
@@ -278,12 +274,11 @@ class Monitor :
 
 		Returns
 		-------
-			( ydata, xdata )
-			ydata : list of list of values for each variable.
-			xdata : list values for the x-axis.
+		data : a tuple of lists of values
+			The first list contains the x-axis values and is followed by the lists of values for each variable plotted.
 		"""
 
-		return self._ydata, self._xdata
+		return ( self._xdata, *self._ydata )
 	
 	def clear( self ) :
 		""" Clear the data and the figure. """
