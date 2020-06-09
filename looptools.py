@@ -50,7 +50,6 @@ class Loop_handler :
 
 import matplotlib.pyplot as plt
 import collections
-import atexit
 import sys
 
 
@@ -192,9 +191,20 @@ class Monitor :
 
 		# Make the window persistent:
 		if keep :
+			import atexit
+			import os
+
 			def keep_figure_open() :
+
+				def handler( signum, frame ) :
+					sys.stderr.write( '\r' )
+					os._exit( os.EX_OK )
+
+				signal.signal( signal.SIGINT, handler )
+
 				plt.ioff()
 				plt.show()
+
 			atexit.register( keep_figure_open )
 	
 	def add_data( self, *new_data ) :
