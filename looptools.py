@@ -92,6 +92,12 @@ class Monitor :
 		The maximum amount of consecutive data to store and display.
 		Past this limit, oldest data are scrapped.
 		If None (default), all the data are kept until the method `clear` is called.
+	zero : boolean, integer or iterable of integers, optional, default: False
+		Whether to keep the zero axis in sight when adjusting the bounding boxes.
+		If True, all subplots will do.
+		If a unique integer is given, only the nth subplot will do.
+		If a list is provided, each integer specifies the subplots
+		that will keep the zero axis in their bounding box.
 	plot_kwargs : dictionary of dictionaries, optional, default: None
 		A dictionary containing dictionaries of keyword arguments to be passed
 		to the calls to `matplotlib.axes.Axes.plot`.
@@ -115,12 +121,14 @@ class Monitor :
 
 	"""
 
-	def __init__( self, n_var=1, labels=None, titles=None, xlabel=None, name=None, log=False, keep=True, xstep=1, datamax=None, plot_kwargs=None ) :
-
-		self.xstep = xstep
-		self.datamax = datamax
+	def __init__( self, n_var=1, labels=None, titles=None, xlabel=None, name=None, log=False, keep=True, xstep=1, datamax=None, zero=False, plot_kwargs=None ) :
 
 		if not isinstance( n_var, collections.Iterable ) : n_var = [ n_var ]
+
+		self._nvar = n_var
+		self.xstep = xstep
+		self.datamax = datamax
+		self.zero = zero
 
 		# Create the figure:
 		self.fig, self.axes = plt.subplots( len( n_var ), sharex=True )
@@ -155,7 +163,8 @@ class Monitor :
 
 				self._lines.append( ax.plot( [], **kwargs )[0] )
 
-			ax.grid( True )
+			ax.grid( ls='dotted', alpha=0.8 )
+			ax.abscissa = ax.axhline( ls='dashed', alpha=0.2 )
 		if xlabel is not None :
 			ax.set_xlabel( xlabel )
 
@@ -253,20 +262,35 @@ class Monitor :
 
 	def _update_figure( self ) :
 
+		# Trim the data if required:
 		if self.datamax is not None and len( self._xdata ) > self.datamax :
 			trim_start = len( self._xdata ) - self.datamax
 			del self._xdata[0:trim_start]
 			for ydata in self._ydata :
 				del ydata[0:trim_start]
 
+		# Update the plotted data:
 		for i, line in enumerate( self._lines ) :
 			line.set_xdata( self._xdata )
 			line.set_ydata( self._ydata[i] )
 
-		for ax in self.axes :
-			ax.relim()
+		# Adjust the bounds of the boxes:
+		i_line = 0
+		for i_ax, ax in enumerate( self.axes ) :
+			if self.zero is True or self.zero == i_ax + 1 or isinstance( self.zero, collections.Iterable ) and i_ax + 1 in self.zero :
+				# Keep the zero axis in sight:
+				ax.relim()
+				i_line += self._nvar[i_ax]
+			else :
+				# Exclude the zero axis:
+				first = True
+				for _ in range( self._nvar[i_ax] ) :
+					ax.dataLim.update_from_path( self._lines[i_line].get_path(), first )
+					first = False
+					i_line += 1
 			ax.autoscale()
 
+		# Update the figure without throwing an error if the window has been closed:
 		try :
 			self.fig.canvas.draw()
 			self.fig.canvas.flush_events()
