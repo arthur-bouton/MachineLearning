@@ -383,3 +383,199 @@ class Monitor :
 		self._ydata = [ [] for _ in self._ydata ]
 
 		self.add_data( *data )
+
+
+
+import re
+
+
+class Datafile :
+	"""
+	A class to extract numerical data from a file.
+
+	Parameters
+	----------
+	filename : string
+		The path to the file containing the data.
+	columns : list of integers or iterators, optional, default: None
+		Each integer specifies the number of a column where to look for numerical data.
+		The lines that don't include a numerical value in every column enumerated by 'columns'
+		will be dismissed.
+		The data will be output in the order specified by 'columns'.
+		It can include iterators such as range.
+		If None, it will assume the columns where to look for data according to the first line
+		where at least one numerical value is found. In this case, it can be used in combination
+		with the argument 'offset' to indicate the first line containing data.
+	sep : string, optional, default: ' '
+		The string to be used to split the lines in columns.
+	ncols : integer, optional, default: None
+		The exact number of columns that a line must comprise in order to be considered.
+	filter : string, optional, default: None
+		A regex that a line must contain in order to be considered.
+	offset : integer, optional, default: 0
+		Offset of lines before starting to look for data.
+	length : integer, optional, default: None
+		Maximum number of data to read.
+
+	"""
+
+	def __init__( self, filename, columns=None, sep=' ', ncols=None, filter=None, offset=0, length=None ) :
+
+		self._filename = filename
+		self._sep = sep
+		self._ncols = ncols
+		self._regex = filter
+		self._offset = offset
+		self._length = length
+		self._nline = 0
+		self._ndata = None
+
+		self._columns = []
+		if columns is not None :
+			# Unfold the iterables as a list of integers:
+			if not isinstance( columns, collections.Iterable ) :
+				columns = [ columns ]
+			for item in columns :
+				if not isinstance( item, collections.Iterable ) :
+					item = [ item ]
+				for col in item :
+					if not isinstance( col, int ) :
+						raise ValueError( "Wrong element in the argument 'columns': expecting integers but received %s" % type( col ) )
+					self._columns.append( col - 1 )
+		else :
+			# Identify the data fields to look for in the first line where at least one float can be found:
+			with open( self._filename, 'r' ) as file :
+
+				line = self._next_line( file, from_beginning=True )
+
+				while line :
+
+					self._columns = []
+					for i, word in enumerate( line ) :
+						try :
+							float( word )
+						except ValueError :
+							continue
+						self._columns.append( i )
+
+					if len( self._columns ) > 0 :
+						break
+
+					line = self._next_line( file )
+
+				if len( self._columns ) == 0 :
+					raise RuntimeError( 'No numerical data field could have been identified in the file %s' % self._filename )
+
+	def _next_line( self, file, from_beginning=False ) :
+
+		if from_beginning :
+			self._nline = 0
+
+		while True :
+
+			strline = file.readline()
+
+			self._nline += 1
+
+			if not strline :
+				return False
+
+			if self._nline <= self._offset :
+				continue
+
+			if self._regex is not None and not re.search( self._regex, strline ) :
+				continue
+
+			# Remove leading and trailing whitespaces and newlines:
+			strline = strline.strip( ' \n' )
+
+			# Remove duplicate whitespaces:
+			strline = ' '.join( strline.split() )
+
+			# Split the line into columns:
+			line = strline.split( self._sep )
+
+			if self._ncols is not None and len( line ) != self._ncols :
+				continue
+
+			return line
+
+	def __iter__( self ) :
+
+		self._ndata = 0
+
+		with open( self._filename, 'r' ) as file :
+
+			line = self._next_line( file, from_beginning=True )
+
+			while line :
+
+				values = []
+				try :
+					for col in self._columns :
+						values.append( float( line[col] ) )
+				except ( ValueError, IndexError ) :
+					pass
+				else :
+					self._ndata += 1
+
+					yield values if len( values ) > 1 else values[0]
+
+					if self._length is not None and self._ndata >= self._length :
+						break
+
+				line = self._next_line( file )
+
+	def __len__( self ) :
+
+		if self._ndata is not None :
+			return self._ndata
+		else :
+			count = 0
+			for _ in self :
+				count += 1
+
+			return count
+
+	def get_data( self ) :
+		"""
+		Returns all the data from a throughout scan of the file.
+		Each list corresponds to a series.
+
+		Returns
+		-------
+		data : a list of lists of values
+			The lists of values for each series extracted from the file.
+
+		The data returned can be plotted straight away with the class Monitor by doing for example:
+
+			Monitor( len( data ) ).add_data( *data )
+
+		Or in order to process the first series as the x-axis values:
+
+			Monitor( len( data ) - 1 ).add_data( *data )
+		"""
+
+		data = [ [] for _ in self._columns ]
+		for values in self :
+			for col, value in zip( data, values ) :
+				col.append( value )
+
+		return data
+
+	def get_data_by_lines( self ) :
+		"""
+		Returns all the data from a throughout scan of the file.
+		Each list corresponds to a line.
+
+		Returns
+		-------
+		data : a list of lists of values
+			The list the values for each line extracted from the file.
+		"""
+
+		data = []
+		for values in self :
+			data.append( values )
+
+		return data
