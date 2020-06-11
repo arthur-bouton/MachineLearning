@@ -1,5 +1,5 @@
 """ 
-Tools to monitor and have control during algorithm progress loops.
+Tools to monitor, extract data and have control during algorithm progress loops.
 
 Author: Arthur Bouton [arthur.bouton@gadz.org]
 """
@@ -405,7 +405,8 @@ class Datafile :
 		It can include iterators such as range.
 		If None, it will assume the columns where to look for data according to the first line
 		where at least one numerical value is found. In this case, it can be used in combination
-		with the argument 'offset' to indicate the first line containing data.
+		with the argument 'offset' to indicate the first line containing data, or in combination
+		with the arguments 'filter' or 'ncols' to filter the irrelevant lines.
 	sep : string, optional, default: ' '
 		The string to be used to split the lines in columns.
 	ncols : integer, optional, default: None
@@ -540,7 +541,7 @@ class Datafile :
 	def get_data( self ) :
 		"""
 		Returns all the data from a throughout scan of the file.
-		Each list corresponds to a series.
+		Each list corresponds to a column.
 
 		Returns
 		-------
@@ -563,10 +564,10 @@ class Datafile :
 
 		return data
 
-	def get_data_by_lines( self ) :
+	def get_data_by_rows( self ) :
 		"""
 		Returns all the data from a throughout scan of the file.
-		Each list corresponds to a line.
+		Each list corresponds to a line read.
 
 		Returns
 		-------
