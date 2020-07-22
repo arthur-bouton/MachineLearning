@@ -21,6 +21,13 @@
 ## Examples of use of the looptools module
 
 
+### Installation
+
+To install the module in the user space, run in a terminal:
+
+`$ pip install . --user`
+
+
 ### Monitor and stop a progress loop
 
 For example, to monitor the progress of a running algorithm by plotting the evolution of two variables *reward* and *loss*, using a logarithmic scale for the second one, you can do:
