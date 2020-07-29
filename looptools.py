@@ -575,8 +575,4 @@ class Datafile :
 			The list the values for each line extracted from the file.
 		"""
 
-		data = []
-		for values in self :
-			data.append( values )
-
-		return data
+		return [ values for values in self ]
