@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
 	name='looptools',
-	version='1.0',
+	version='1.1',
 	description='Tools to monitor, extract data and have control during algorithm progress loops',
 	license='GPL-3.0',
 	author='Arthur Bouton',

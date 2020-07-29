@@ -59,46 +59,46 @@ class Monitor :
 
 	Parameters
 	----------
-	n_var : integer or iterable of integers, optional, default: 1
+	n_var : int or iterable of ints, optional, default: 1
 		The number of variables to be plotted on each subplot.
 		If a unique integer is given, there will be only one graph.
 		Otherwise, the length of the iterable defines the number of subplots.
-	labels :  string or list of string, optional, default: None
+	labels :  str or list of strs, optional, default: None
 		Labels for each variable to be plotted.
 		If a subplot contains several variables, it will be displayed as a
 		legend. Otherwise, it will be a label on the y-axis.
 		If a unique string is given, it will be applied to the first variable.
-	titles : string or list of string, optional, default: None
+	titles : str or list of strs, optional, default: None
 		Titles for each subplot.
 		If a unique string is given, it will be applied to the first subplot.
-	xlabel : string, optional, default: None
+	xlabel : str, optional, default: None
 		Label for the x-axis.
-	name : string, optional, default: None
+	name : str, optional, default: None
 		Title used by the figure window.
 		If None (default), the name of the calling script is used.
-	log : boolean, integer or iterable of integers, optional, default: False
+	log : bool, int or iterable of ints, optional, default: False
 		Whether to use logarithmic scales.
 		If True, all subplots will do.
 		If a unique integer is given, only the nth subplot will do.
 		If a list is provided, each integer specifies the subplots
 		requiring a logarithmic scale.
-	keep : boolean, optional, default: True
+	keep : bool, optional, default: True
 		Whether to make the figure persistent after the end of the script.
 		True by default.
-	xstep : integer or float, optional, default: 1
+	xstep : int or float, optional, default: 1
 		The default gap to use between each x-axis value when adding new data.
 		It is ignored when the method `add_data` is called with its second argument.
-	datamax : integer, optional, default: None
+	datamax : int, optional, default: None
 		The maximum amount of consecutive data to store and display.
 		Past this limit, oldest data are scrapped.
 		If None (default), all the data are kept until the method `clear` is called.
-	zero : boolean, integer or iterable of integers, optional, default: False
+	zero : bool, int or iterable of ints, optional, default: False
 		Whether to keep the zero axis in sight when adjusting the bounding boxes.
 		If True, all subplots will do.
 		If a unique integer is given, only the nth subplot will do.
 		If a list is provided, each integer specifies the subplots
 		that will keep the zero axis in their bounding box.
-	plot_kwargs : dictionary of dictionaries, optional, default: None
+	plot_kwargs : dict of dicts, optional, default: None
 		A dictionary containing dictionaries of keyword arguments to be passed
 		to the calls to `matplotlib.axes.Axes.plot`.
 		Each key has to be an integers corresponding to the number of the variable
@@ -222,7 +222,7 @@ class Monitor :
 
 		Parameters
 		----------
-		new_data : value or iterable of values
+		new_data : float or iterable of floats
 			Each argument is the value or list of next successive values to add to the corresponding variable
 			in their plot order.
 			Optionally, the corresponding x-axis value(s) can be specified as first argument. If not specified,
@@ -308,7 +308,7 @@ class Monitor :
 
 		Returns
 		-------
-		data : a tuple of lists of values
+		data : a tuple of lists of floats
 			The first list contains the x-axis values and is followed by the lists of values for each variable plotted.
 		"""
 
@@ -386,6 +386,56 @@ class Monitor :
 
 
 
+def strange( input_string, range_char='-' ) :
+	"""
+	Create a list of integers from a string describing a series of ranges.
+
+	Parameters
+	----------
+	input_string : str
+		The string describing the list of integers to output.
+		Integers or ranges to concatenate are separated by commas.
+		A dash, or the character specified by the argument 'range_char',
+		defines the two bounds of a range.
+		An optional slash followed by an integer after a range specifies
+		the step of the range.
+	range_char : str, default '-'
+		The character that is used to split the two bounds of each range.
+		It is required to change it in order to work with negative values.
+
+	Examples
+	--------
+	strange( '5,2-6/2,1-3' )  -> [5, 2, 4, 6, 1, 2, 3]
+	strange( '6-2/2' )        -> [6, 4, 2]
+	strange( '-2_-6/2', '_' ) -> [-2, -4, -6]
+	"""
+
+	output_list = []
+
+	for range_string in input_string.split( ',' ) :
+
+		range_step_list = range_string.split( '/' )
+		if len( range_step_list ) == 2 :
+			step = abs( int( range_step_list[1] ) )
+		elif len( range_step_list ) > 2 :
+			raise ValueError( "There are too many '/' for the range described by %s" % range_string )
+		else :
+			step = 1
+
+		range_list = range_step_list[0].split( range_char )
+		if len( range_list ) == 2 :
+			start = int( range_list[0] )
+			stop  = int( range_list[1] )
+			order = 1 if start <= stop else -1
+			range_list = range( start, stop + order, order*step )
+			output_list.extend( range_list )
+		else :
+			output_list.append( int( range_step_list[0] ) )
+
+	return output_list
+
+
+
 import re
 
 
@@ -395,9 +445,9 @@ class Datafile :
 
 	Parameters
 	----------
-	filename : string
+	filename : str
 		The path to the file containing the data.
-	columns : list of integers or iterators, optional, default: None
+	columns : list of ints or iterators, optional, default: None
 		Each integer specifies the number of a column where to look for numerical data.
 		The lines that don't include a numerical value in every column enumerated by 'columns'
 		will be dismissed.
@@ -407,15 +457,15 @@ class Datafile :
 		where at least one numerical value is found. In this case, it can be used in combination
 		with the argument 'offset' to indicate the first line containing data, or in combination
 		with the arguments 'filter' or 'ncols' to filter the irrelevant lines.
-	sep : string, optional, default: ' '
+	sep : str, optional, default: ' '
 		The string to be used to split the lines in columns.
-	ncols : integer, optional, default: None
+	ncols : int, optional, default: None
 		The exact number of columns that a line must comprise in order to be considered.
-	filter : string, optional, default: None
+	filter : str, optional, default: None
 		A regex that a line must contain in order to be considered.
-	offset : integer, optional, default: 0
+	offset : int, optional, default: 0
 		Offset of lines before starting to look for data.
-	length : integer, optional, default: None
+	length : int, optional, default: None
 		Maximum number of data to read.
 
 	"""
@@ -432,7 +482,9 @@ class Datafile :
 		self._ndata = None
 
 		self._columns = []
-		if columns is not None :
+		if isinstance( columns, str ) :
+			self._columns = [ col - 1 for col in strange( columns ) ]
+		elif columns is not None :
 			# Unfold the iterables as a list of integers:
 			if not isinstance( columns, collections.Iterable ) :
 				columns = [ columns ]
@@ -451,7 +503,6 @@ class Datafile :
 
 				while line :
 
-					self._columns = []
 					for i, word in enumerate( line ) :
 						try :
 							float( word )

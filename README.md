@@ -23,7 +23,7 @@
 
 ### Installation
 
-To install the module in the user space, run in a terminal:
+To install the module for the current user, run in a terminal:
 
 `$ pip install . --user`
 
@@ -83,6 +83,8 @@ To extract the time and the variables alpha, beta and gamma, you can either:
 `datafile = Datafile( 'data.txt', [ 2, 4, 6, 8 ] )`
 - Specify the columns with an iterable or a list of iterables:<br />
 `datafile = Datafile( 'data.txt', range( 2, 9, 2 ) )`
+- Specify the columns with a string that will be processed by the function `strange()` provided by this module as well:<br />
+`datafile = Datafile( 'data.txt', '2-8/2' )`
 
 If the file stores the data in CSV, you have to specify that the column separator is a comma with the argument `sep=','`.
 
