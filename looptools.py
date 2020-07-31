@@ -608,6 +608,9 @@ class Datafile :
 			Monitor( len( data ) - 1 ).add_data( *data )
 		"""
 
+		if len( self._columns ) == 1 :
+			return [ values for values in self ]
+
 		data = [ [] for _ in self._columns ]
 		for values in self :
 			for col, value in zip( data, values ) :
