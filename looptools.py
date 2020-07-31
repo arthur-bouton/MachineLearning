@@ -386,7 +386,7 @@ class Monitor :
 
 
 
-def strange( input_string, range_char='-' ) :
+def strange( input_string ) :
 	"""
 	Create a list of integers from a string describing a series of ranges.
 
@@ -395,42 +395,39 @@ def strange( input_string, range_char='-' ) :
 	input_string : str
 		The string describing the list of integers to output.
 		Integers or ranges to concatenate are separated by commas.
-		A dash, or the character specified by the argument 'range_char',
-		defines the two bounds of a range.
-		An optional slash followed by an integer after a range specifies
-		the step of the range.
-	range_char : str, default '-'
-		The character that is used to split the two bounds of each range.
-		It is required to change it in order to work with negative values.
+		A colon defines the two bounds of a range, which can go in ascending
+		or descending order.
+		An optional extra colon followed by an integer after a range specifies
+		the step to keep between each value of the range.
 
 	Examples
 	--------
-	strange( '5,2-6/2,1-3' )  -> [5, 2, 4, 6, 1, 2, 3]
-	strange( '6-2/2' )        -> [6, 4, 2]
-	strange( '-2_-6/2', '_' ) -> [-2, -4, -6]
+	strange( '5,1:3,2:6:2' ) -> [5, 1, 2, 3, 2, 4, 6]
+	strange( '6:2:2' )       -> [6, 4, 2]
+	strange( '-2:-6:2' )     -> [-2, -4, -6]
 	"""
 
 	output_list = []
 
 	for range_string in input_string.split( ',' ) :
 
-		range_step_list = range_string.split( '/' )
-		if len( range_step_list ) == 2 :
-			step = abs( int( range_step_list[1] ) )
-		elif len( range_step_list ) > 2 :
-			raise ValueError( "There are too many '/' for the range described by %s" % range_string )
+		range_list = range_string.split( ':' )
+
+		if len( range_list ) > 3 :
+			raise ValueError( 'There are too many colons for the range described by %s' % range_string )
+
+		if len( range_list ) == 3 :
+			step = abs( int( range_list[2] ) )
 		else :
 			step = 1
 
-		range_list = range_step_list[0].split( range_char )
-		if len( range_list ) == 2 :
+		if len( range_list ) >= 2 :
 			start = int( range_list[0] )
 			stop  = int( range_list[1] )
 			order = 1 if start <= stop else -1
-			range_list = range( start, stop + order, order*step )
-			output_list.extend( range_list )
+			output_list.extend( range( start, stop + order, order*step ) )
 		else :
-			output_list.append( int( range_step_list[0] ) )
+			output_list.append( int( range_list[0] ) )
 
 	return output_list
 
@@ -447,12 +444,15 @@ class Datafile :
 	----------
 	filename : str
 		The path to the file containing the data.
-	columns : list of ints or iterators, optional, default: None
+	columns : a list of ints or iterators or a str, optional, default: None
 		Each integer specifies the number of a column where to look for numerical data.
+		A negative number indicates to count from the end of each line.
 		The lines that don't include a numerical value in every column enumerated by 'columns'
 		will be dismissed.
 		The data will be output in the order specified by 'columns'.
 		It can include iterators such as range.
+		If a string is provided, it will be processed by the function strange included in this
+		module.
 		If None, it will assume the columns where to look for data according to the first line
 		where at least one numerical value is found. In this case, it can be used in combination
 		with the argument 'offset' to indicate the first line containing data, or in combination
@@ -483,7 +483,7 @@ class Datafile :
 
 		self._columns = []
 		if isinstance( columns, str ) :
-			self._columns = [ col - 1 for col in strange( columns ) ]
+			self._columns = [ col - 1 if col > 0 else col for col in strange( columns ) ]
 		elif columns is not None :
 			# Unfold the iterables as a list of integers:
 			if not isinstance( columns, collections.Iterable ) :
@@ -494,7 +494,7 @@ class Datafile :
 				for col in item :
 					if not isinstance( col, int ) :
 						raise ValueError( "Wrong element in the argument 'columns': expecting integers but received %s" % type( col ) )
-					self._columns.append( col - 1 )
+					self._columns.append( col - 1 if col > 0 else col )
 		else :
 			# Identify the data fields to look for in the first line where at least one float can be found:
 			with open( self._filename, 'r' ) as file :
