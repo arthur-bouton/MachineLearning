@@ -227,7 +227,7 @@ class RBF :
 		for k in range( self._Nk ) :
 			C = [ distrib[ k%N_distr ] ]
 			for i in range( 1, dim ) :
-				C.append( distrib[ ( k/( N_distr**i ) )%N_distr ] )
+				C.append( distrib[ ( k//( N_distr**i ) )%N_distr ] )
 			self._centers.append( np.array( C ) )
 
 		# Initialization of the weights:

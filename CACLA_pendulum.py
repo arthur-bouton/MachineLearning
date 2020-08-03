@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #-*- coding: utf-8 -*-
 """ 
 Implementation of the Continuous Actor Critic Learning Automaton (CACLA) [1] to balance a pendulum.
@@ -19,10 +19,11 @@ from matplotlib.pyplot import *
 from mpl_toolkits.mplot3d import Axes3D
 from neural_networks import RBF, MLP
 from looptools import Loop_handler, Monitor
+import sys
 import os
 
 
-sys.stdout = os.fdopen( sys.stdout.fileno(), 'w', 0 )
+#sys.stdout = os.fdopen( sys.stdout.fileno(), 'w', 0 )
 
 
 # Identifier name for the data:
@@ -138,7 +139,7 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 
 	with Loop_handler() as interruption :
 
-		while not interruption() and ntrial < 20000 :
+		while not interruption() and ntrial < 2000 :
 
 			# Action selection:
 			exploration = random.rand() < prob_expl( ntrial )
@@ -183,12 +184,13 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 
 				if sys.argv[-1] != 'quick' or ntrial%20 == 0 :
 					t, Rt, success_rate, Nt = quick_eval( lambda x : umax*( clip( actor.eval( scaling( x ) ), -1, 1 ) ) )
-					print 'Eval: %i | t: %4.1f | Rt: %+7.4f | Success rate: %5.1f %% | Nt: %+3d | Qa: %7.2g | Qc: %7.2g' % ( ntrial, t, Rt, success_rate, Nt, Qa, Qc )
-					reward_graph.add_data( Rt, ntrial )
+					print( 'Eval: %i | t: %4.1f | Rt: %+7.4f | Success rate: %5.1f %% | Nt: %+3d | Qa: %7.2g | Qc: %7.2g' % ( ntrial, t, Rt, success_rate, Nt, Qa, Qc ) )
+					reward_graph.add_data( ntrial, Rt )
 				else :
 					Rt /= t/step
 					success_rate = sum( [ ( 1. if abs( a[0] ) < 10 else 0. ) for a in x_data ] )/len( x_data )*100
-					print 'Trial: %i | t: %4.1f | Rt: %+7.4f | Success rate: %5.1f %% | Nt: %+3d | Qa: %7.2g | Qc: %7.2g' % ( ntrial, t, Rt, success_rate, ( diff - x0[0] )/( 2*pi ), Qa, Qc )
+					print( 'Trial: %i | t: %4.1f | Rt: %+7.4f | Success rate: %5.1f %% | Nt: %+3d | Qa: %7.2g | Qc: %7.2g' % ( ntrial, t, Rt, success_rate, ( diff - x0[0] )/( 2*pi ), Qa, Qc ) )
+				sys.stdout.flush()
 
 				t = 0.
 				x = array( x0 )
@@ -197,7 +199,7 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 				diff = 0.
 				restart = False
 
-	answer = raw_input( '\nSave data? (y) ' )
+	answer = input( '\nSave data? (y) ' )
 	if answer == 'y' :
 
 		try :
@@ -208,9 +210,9 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 
 		actor.save( data_dir + '/actor' )
 		critic.save( data_dir + '/critic' )
-		print 'Data saved.'
+		print( 'Data saved.' )
 
-	#answer = raw_input( '\nPlot the training history? (y) ' )
+	#answer = input( '\nPlot the training history? (y) ' )
 	#if answer == 'y' :
 		#actor.plot( pause=False, name='actor' )
 		#critic.plot( pause=True, name='critic' )
@@ -265,7 +267,7 @@ while t < tf - step/2 :
 
 Rt /= tf/step + 1
 success_rate = sum( [ ( 1. if abs( a[0] ) < 10 else 0. ) for a in x_data ] )/len( x_data )*100
-print 't: %4.1f | Rt: %+7.4f | Success rate: %5.1f %% | Nt: %+3d' % ( t, Rt, success_rate, ( diff - x0[0] )/( 2* pi ) )
+print( 't: %4.1f | Rt: %+7.4f | Success rate: %5.1f %% | Nt: %+3d' % ( t, Rt, success_rate, ( diff - x0[0] )/( 2* pi ) ) )
 
 
 ############

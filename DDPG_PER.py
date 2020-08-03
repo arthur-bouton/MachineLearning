@@ -583,7 +583,7 @@ if __name__ == '__main__' :
 						eval_env.print_eval()
 						sys.stdout.flush()
 						ddpg.reward_summary( eval_env.get_Rt() )
-						reward_graph.add_data( eval_env.get_Rt(), n_ep )
+						reward_graph.add_data( n_ep, eval_env.get_Rt() )
 
 
 			end = time.time()
