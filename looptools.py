@@ -397,6 +397,8 @@ def strange( input_string ) :
 		Integers or ranges to concatenate are separated by commas.
 		A colon defines the two bounds of a range, which can go in ascending
 		or descending order.
+		If the number after the colon is preceded by a 'x', it defines the
+		amount of successive elements desired.
 		An optional extra colon followed by an integer after a range specifies
 		the step to keep between each value of the range.
 
@@ -405,6 +407,8 @@ def strange( input_string ) :
 	strange( '5,1:3,2:6:2' ) -> [5, 1, 2, 3, 2, 4, 6]
 	strange( '6:2:2' )       -> [6, 4, 2]
 	strange( '-2:-6:2' )     -> [-2, -4, -6]
+	strange( '2:x6:2' )      -> [2, 4, 6, 8, 10, 12]
+	strange( '2:x6:-1' )     -> [2, 1, 0, -1, -2, -3]
 	"""
 
 	output_list = []
@@ -417,15 +421,19 @@ def strange( input_string ) :
 			raise ValueError( 'There are too many colons for the range described by %s' % range_string )
 
 		if len( range_list ) == 3 :
-			step = abs( int( range_list[2] ) )
+			step = int( range_list[2] )
 		else :
 			step = 1
 
 		if len( range_list ) >= 2 :
 			start = int( range_list[0] )
-			stop  = int( range_list[1] )
-			order = 1 if start <= stop else -1
-			output_list.extend( range( start, stop + order, order*step ) )
+			if range_list[1][0] == 'x' :
+				stop  = start + step*( abs( int( range_list[1][1:] ) ) - 1 )
+				order = 1 if step >= 0 else -1
+			else :
+				stop  = int( range_list[1] )
+				order = 1 if start <= stop else -1
+			output_list.extend( range( start, stop + order, order*abs( step ) ) )
 		else :
 			output_list.append( int( range_list[0] ) )
 
