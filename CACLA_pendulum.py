@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-#-*- coding: utf-8 -*-
 """ 
 Implementation of the Continuous Actor Critic Learning Automaton (CACLA) [1] to balance a pendulum.
 

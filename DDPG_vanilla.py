@@ -1,19 +1,13 @@
-#!/usr/bin/env python3
 """ 
 Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [1] with TensorFlow.
 
 [1] Lillicrap, Timothy P., et al. "Continuous control with deep reinforcement learning." arXiv preprint arXiv:1509.02971 (2015).
 
-Run a test with a simple pendulum by calling this script without argument.
-When the algorithm has converged, send SIGINT to stop it and save the model by answering "y" when prompted to.
-Then run the script with the word "eval" as first argument in order to evaluate the obtained policy.
-The training can be took up with a saved model by calling the script with the word "load" as first argument.
-
 Author: Arthur Bouton [arthur.bouton@gadz.org]
-"""
-#import warnings
-#warnings.simplefilter( action='ignore', category=FutureWarning )
 
+Dependency:
+tensorflow 1.13.1
+"""
 import tensorflow as tf
 import numpy as np
 from collections import deque
@@ -23,100 +17,74 @@ import os
 from tqdm import trange
 
 
-def actor_network_def( name, states, a_dim, action_scale=None, summaries=False ) :
+def actor_network_def( states, a_dim ) :
+	""" A feedforward neural network for the synthesis of the policy """
 
 	s_dim = states.get_shape().as_list()[1]
 
-	with tf.variable_scope( name ) :
+	with tf.variable_scope( 'layer1' ) :
+		n_units_1 = 400
+		wmax = 1/np.sqrt( s_dim )
+		bmax = 1/np.sqrt( s_dim )
+		w1 = tf.get_variable( 'kernel', [s_dim, n_units_1], tf.float32, tf.initializers.random_uniform( -wmax, wmax ) )
+		b1 = tf.get_variable( 'bias', [n_units_1], tf.float32, tf.initializers.random_uniform( -bmax, bmax ) )
+		o1 = tf.add( tf.matmul( states, w1 ), b1 )
+		a1 = tf.nn.relu( o1 )
 
-		with tf.variable_scope( 'layer1' ) :
-			n_units_1 = 400
-			wmax = 1/np.sqrt( s_dim )
-			bmax = 1/np.sqrt( s_dim )
-			w1 = tf.get_variable( 'w', [s_dim, n_units_1], tf.float32, tf.initializers.random_uniform( -wmax, wmax ) )
-			b1 = tf.get_variable( 'b', [n_units_1], tf.float32, tf.initializers.random_uniform( -bmax, bmax ) )
-			o1 = tf.add( tf.matmul( states, w1 ), b1 )
-			a1 = tf.nn.relu( o1 )
+	with tf.variable_scope( 'layer2' ) :
+		n_units_2 = 300
+		wmax = 1/np.sqrt( n_units_1 )
+		bmax = 1/np.sqrt( n_units_1 )
+		w2 = tf.get_variable( 'kernel', [n_units_1, n_units_2], tf.float32, tf.initializers.random_uniform( -wmax, wmax ) )
+		b2 = tf.get_variable( 'bias', [n_units_2], tf.float32, tf.initializers.random_uniform( -bmax, bmax ) )
+		o2 = tf.add( tf.matmul( a1, w2 ), b2 )
+		a2 = tf.nn.relu( o2 )
 
-		with tf.variable_scope( 'layer2' ) :
-			n_units_2 = 300
-			wmax = 1/np.sqrt( n_units_1 )
-			bmax = 1/np.sqrt( n_units_1 )
-			w2 = tf.get_variable( 'w', [n_units_1, n_units_2], tf.float32, tf.initializers.random_uniform( -wmax, wmax ) )
-			b2 = tf.get_variable( 'b', [n_units_2], tf.float32, tf.initializers.random_uniform( -bmax, bmax ) )
-			o2 = tf.add( tf.matmul( a1, w2 ), b2 )
-			a2 = tf.nn.relu( o2 )
+	with tf.variable_scope( 'layer3' ) :
+		wmax = 0.003
+		bmax = 0.003
+		w3 = tf.get_variable( 'kernel', [n_units_2, a_dim], tf.float32, tf.initializers.random_uniform( -wmax, wmax ) )
+		b3 = tf.get_variable( 'bias', [a_dim], tf.float32, tf.initializers.random_uniform( -bmax, bmax ) )
+		o3 = tf.add( tf.matmul( a2, w3 ), b3 )
+		action = tf.nn.tanh( o3 )
+		#action = o3
+		#action = tf.clip_by_value( o3, -1, 1 )
 
-		with tf.variable_scope( 'layer3' ) :
-			wmax = 0.003
-			bmax = 0.003
-			w3 = tf.get_variable( 'w', [n_units_2, a_dim], tf.float32, tf.initializers.random_uniform( -wmax, wmax ) )
-			b3 = tf.get_variable( 'b', [a_dim], tf.float32, tf.initializers.random_uniform( -bmax, bmax ) )
-			o3 = tf.add( tf.matmul( a2, w3 ), b3 )
-			action = tf.nn.tanh( o3 )
-			#action = o3
-			#action = tf.clip_by_value( o3, -1, 1 )
-
-		if action_scale is not None :
-			action_scale = tf.constant( action_scale, tf.float32, name='action_scale' )
-			action = tf.multiply( action, action_scale, 'scale_actions' )
-
-		if summaries :
-			tf.summary.histogram( 'layer1/weights', w1 )
-			tf.summary.histogram( 'layer1/bias', b1 )
-			tf.summary.histogram( 'layer2/weights', w2 )
-			tf.summary.histogram( 'layer2/bias', b2 )
-			tf.summary.histogram( 'layer3/weights', w3 )
-			tf.summary.histogram( 'layer3/bias', b3 )
-
-		return action, tf.get_collection( tf.GraphKeys.TRAINABLE_VARIABLES, scope=tf.get_variable_scope().name )
+	return action
 
 
-def critic_network_def( name, states, actions, action_scale=None, summaries=False ) :
+def critic_network_def( states, actions ) :
+	""" A feedforward neural network for the approximation of the Q-value """
 
 	s_dim = states.get_shape().as_list()[1]
 	a_dim = actions.get_shape().as_list()[1]
 
-	with tf.variable_scope( name ) :
+	with tf.variable_scope( 'layer1' ) :
+		n_units_1 = 400
+		wmax = 1/np.sqrt( s_dim )
+		bmax = 1/np.sqrt( s_dim )
+		w1 = tf.get_variable( 'kernel', [s_dim, n_units_1], tf.float32, tf.initializers.random_uniform( -wmax, wmax ) )
+		b1 = tf.get_variable( 'bias', [n_units_1], tf.float32, tf.initializers.random_uniform( -bmax, bmax ) )
+		o1 = tf.add( tf.matmul( states, w1 ), b1 )
+		a1 = tf.nn.relu( o1 )
 
-		if action_scale is not None :
-			action_scale = tf.constant( action_scale, tf.float32, name='action_scale' )
-			actions = tf.divide( actions, action_scale, 'scale_actions' )
+	with tf.variable_scope( 'layer2' ) :
+		n_units_2 = 300
+		wmax = 1/np.sqrt( n_units_1 + a_dim )
+		bmax = 1/np.sqrt( n_units_1 + a_dim )
+		w2 = tf.get_variable( 'kernel', [n_units_1 + a_dim, n_units_2], tf.float32, tf.initializers.random_uniform( -wmax, wmax ) )
+		b2 = tf.get_variable( 'bias', [n_units_2], tf.float32, tf.initializers.random_uniform( -bmax, bmax ) )
+		o2 = tf.add( tf.matmul( tf.concat( [ a1, actions ], 1 ), w2 ), b2 )
+		a2 = tf.nn.relu( o2 )
 
-		with tf.variable_scope( 'layer1' ) :
-			n_units_1 = 400
-			wmax = 1/np.sqrt( s_dim )
-			bmax = 1/np.sqrt( s_dim )
-			w1 = tf.get_variable( 'w', [s_dim, n_units_1], tf.float32, tf.initializers.random_uniform( -wmax, wmax ) )
-			b1 = tf.get_variable( 'b', [n_units_1], tf.float32, tf.initializers.random_uniform( -bmax, bmax ) )
-			o1 = tf.add( tf.matmul( states, w1 ), b1 )
-			a1 = tf.nn.relu( o1 )
+	with tf.variable_scope( 'layer3' ) :
+		wmax = 0.003
+		bmax = 0.003
+		w3 = tf.get_variable( 'kernel', [n_units_2, 1], tf.float32, tf.initializers.random_uniform( -wmax, wmax ) )
+		b3 = tf.get_variable( 'bias', [1], tf.float32, tf.initializers.random_uniform( -bmax, bmax ) )
+		Q_value = tf.add( tf.matmul( a2, w3 ), b3 )
 
-		with tf.variable_scope( 'layer2' ) :
-			n_units_2 = 300
-			wmax = 1/np.sqrt( n_units_1 + a_dim )
-			bmax = 1/np.sqrt( n_units_1 + a_dim )
-			w2 = tf.get_variable( 'w', [n_units_1 + a_dim, n_units_2], tf.float32, tf.initializers.random_uniform( -wmax, wmax ) )
-			b2 = tf.get_variable( 'b', [n_units_2], tf.float32, tf.initializers.random_uniform( -bmax, bmax ) )
-			o2 = tf.add( tf.matmul( tf.concat( [ a1, actions ], 1 ), w2 ), b2 )
-			a2 = tf.nn.relu( o2 )
-
-		with tf.variable_scope( 'layer3' ) :
-			wmax = 0.003
-			bmax = 0.003
-			w3 = tf.get_variable( 'w', [n_units_2, 1], tf.float32, tf.initializers.random_uniform( -wmax, wmax ) )
-			b3 = tf.get_variable( 'b', [1], tf.float32, tf.initializers.random_uniform( -bmax, bmax ) )
-			Q_value = tf.add( tf.matmul( a2, w3 ), b3 )
-
-		if summaries :
-			tf.summary.histogram( 'layer1/weights', w1 )
-			tf.summary.histogram( 'layer1/bias', b1 )
-			tf.summary.histogram( 'layer2/weights', w2 )
-			tf.summary.histogram( 'layer2/bias', b2 )
-			tf.summary.histogram( 'layer3/weights', w3 )
-			tf.summary.histogram( 'layer3/bias', b3 )
-
-		return Q_value, tf.get_collection( tf.GraphKeys.TRAINABLE_VARIABLES, scope=tf.get_variable_scope().name )
+	return Q_value
 
 
 class DDPG() :
@@ -175,14 +143,30 @@ class DDPG() :
 			scaled_states = self.states
 
 		# Declaration of the actor and the critic networks:
-		self.mu_actions, actor_params = actor_def( 'Actor', scaled_states, self.a_dim, action_scale, self.summaries )
-		tf.identity( self.mu_actions, name="Actor_Output" )
-		self.Q_value, critic_params = critic_def( 'Critic', scaled_states, self.actions, action_scale, self.summaries )
+		with tf.variable_scope( 'Actor' ) :
+			self.mu_actions = actor_def( scaled_states, self.a_dim )
+			if action_scale is not None :
+				action_scale = tf.constant( action_scale, tf.float32, name='action_scale' )
+				self.mu_actions = tf.multiply( self.mu_actions, action_scale, 'scale_actions' )
+			actor_params = tf.get_collection( tf.GraphKeys.TRAINABLE_VARIABLES, scope=tf.get_variable_scope().name )
+		tf.identity( self.mu_actions, name='Actor_Output' )
+
+		with tf.variable_scope( 'Critic' ) :
+			if action_scale is not None :
+				scaled_actions = tf.divide( self.actions, action_scale, 'scale_actions' )
+			else :
+				scaled_actions = self.actions
+			self.Q_value = critic_def( scaled_states, scaled_actions )
+			critic_params = tf.get_collection( tf.GraphKeys.TRAINABLE_VARIABLES, scope=tf.get_variable_scope().name )
 
 		# Declaration of the target networks:
 		with tf.variable_scope( 'Target_Networks' ) :
-			target_mu_actions, target_actor_params = actor_def( 'Target_Actor', scaled_states, self.a_dim, action_scale )
-			self.target_Q_value, target_critic_params = critic_def( 'Target_Critic', scaled_states, target_mu_actions, action_scale )
+			with tf.variable_scope( 'Target_Actor' ) :
+				target_mu_actions = actor_def( scaled_states, self.a_dim )
+				target_actor_params = tf.get_collection( tf.GraphKeys.TRAINABLE_VARIABLES, scope=tf.get_variable_scope().name )
+			with tf.variable_scope( 'Target_Critic' ) :
+				self.target_Q_value = critic_def( scaled_states, target_mu_actions )
+				target_critic_params = tf.get_collection( tf.GraphKeys.TRAINABLE_VARIABLES, scope=tf.get_variable_scope().name )
 
 		# Update of the target network parameters:
 		with tf.variable_scope( 'update_target_networks' ) :
@@ -194,10 +178,12 @@ class DDPG() :
 		self.y = tf.placeholder( tf.float32, [None, 1], 'Targets' )
 		self.L = tf.losses.mean_squared_error( self.y, self.Q_value )
 		if beta_L2 > 0 :
-			L2 = beta_L2*tf.reduce_mean( [ tf.nn.l2_loss( v ) for v in critic_params if 'w' in v.name ] )
+			L2 = beta_L2*tf.reduce_mean( [ tf.nn.l2_loss( v ) for v in critic_params if 'kernel' in v.name ] )
 			self.L += L2
 		critic_optimizer = tf.train.AdamOptimizer( critic_lr )
-		self.train_critic = critic_optimizer.minimize( self.L, name='critic_backprop' )
+		#self.train_critic = critic_optimizer.minimize( self.L, name='critic_backprop' )
+		critic_grads_and_vars = critic_optimizer.compute_gradients( self.L, critic_params )
+		self.train_critic = critic_optimizer.apply_gradients( critic_grads_and_vars, name='critic_backprop' )
 
 		# Application of the deterministic policy gradient to the actor network:
 		gradQ_a = tf.gradients( self.Q_value, self.actions, name='gradQ_a' )
@@ -226,6 +212,13 @@ class DDPG() :
 		# Create the summaries:
 		if self.summaries :
 
+			def param_histogram( params ) :
+				for var in params :
+					name = var.name.split( ':' )[0]
+					tf.summary.histogram( name, var )
+
+			param_histogram( actor_params )
+			param_histogram( critic_params )
 			self.wb_summary_op = tf.summary.merge_all()
 
 			self.reward_eval = tf.placeholder( tf.float32, name='reward_eval' )
@@ -233,16 +226,17 @@ class DDPG() :
 			self.reward_summary_op = tf.summary.merge( [ reward_summary ] )
 
 			L_summary = tf.summary.scalar( 'L', self.L )
-			critic_gradients = critic_optimizer.compute_gradients( self.L, critic_params )
-			cg_summary = []
-			cg_summary.append( tf.summary.scalar( 'critic_gradients/layer1/weights', tf.norm( critic_gradients[0][0] ) ) )
-			cg_summary.append( tf.summary.scalar( 'critic_gradients/layer1/bias', tf.norm( critic_gradients[1][0] ) ) )
-			self.critic_summary_op = tf.summary.merge( [ L_summary ] + cg_summary )
+			cg_summaries = []
+			for grad, var in critic_grads_and_vars :
+				name = 'Critic_Gradients/' + var.name.split( '/', 1 )[1].split( ':' )[0]
+				cg_summaries.append( tf.summary.scalar( name, tf.norm( grad ) ) )
+			self.critic_summary_op = tf.summary.merge( [ L_summary ] + cg_summaries )
 
-			ag_summary = []
-			ag_summary.append( tf.summary.scalar( 'actor_gradients/layer1/weights', tf.norm( policy_gradients[0] ) ) )
-			ag_summary.append( tf.summary.scalar( 'actor_gradients/layer1/bias', tf.norm( policy_gradients[1] ) ) )
-			self.actor_summary_op = tf.summary.merge( ag_summary )
+			ag_summaries = []
+			for grad, var in zip( policy_gradients, actor_params ) :
+				name = 'Policy_Gradients/' + var.name.split( '/', 1 )[1].split( ':' )[0]
+				ag_summaries.append( tf.summary.scalar( name, tf.norm( grad ) ) )
+			self.actor_summary_op = tf.summary.merge( ag_summaries )
 
 			self.writer = tf.summary.FileWriter( summary_dir, self.sess.graph )
 
@@ -305,7 +299,7 @@ class DDPG() :
 			self.sess.run( self.update_target_actor )
 			self.sess.run( self.update_target_critic )
 
-		if self.summaries :
+		if self.summaries and self.wb_summary_op is not None :
 			self.writer.add_summary( self.sess.run( self.wb_summary_op ), self.n_iter )
 			#self.writer.flush()
 
@@ -351,163 +345,3 @@ class DDPG() :
 
 	def __exit__( self, type, value, traceback ) :
 		self.sess.close()
-
-
-if __name__ == '__main__' :
-
-	from pendulum import Pendulum
-	from looptools import Loop_handler, Monitor
-
-
-	# Identifier name for the data:
-	data_id = 'test1'
-
-	script_name = os.path.splitext( os.path.basename( __file__ ) )[0]
-
-	# Name of the files where to store the network parameters:
-	session_dir = './training_data/' + script_name + '/' + data_id
-	session_files = session_dir + '/session'
-
-	# Parameters for the training:
-	ENV = Pendulum # A class defining the environment
-	EP_LEN = 100 # Number of steps for one episode
-	EP_MAX = 1000 # Maximal number of episodes for the training
-	ITER_PER_EP = 200 # Number of training iterations between each episode
-	S_DIM = 2 # Dimension of the state space
-	A_DIM = 1 # Dimension of the action space
-	STATE_SCALE = [ np.pi, 2*np.pi ] # A scalar or a vector to normalize the state
-	ACTION_SCALE = None # A scalar or a vector to scale the actions
-	GAMMA = 0.99 # Discount factor of the reward
-	TAU = 0.001 # Soft target update factor
-	BUFFER_SIZE = 100000 # Maximal size of the replay buffer
-	MINIBATCH_SIZE = 64 # Size of each minibatch
-	ACTOR_LR = 0.0001 # Learning rate of the actor network
-	CRITIC_LR = 0.001 # Learning rate of the critic network
-	BETA_L2 = 1e-6 # Ridge regularization coefficient
-	#SUMMARY_DIR = '/tmp/' + script_name + '/' + data_id # Directory where to save summaries
-	SUMMARY_DIR = None # No summaries
-	SEED = None # Random seed for the initialization of all random generators
-	SINGLE_THREAD = False # Force the execution on a single core in order to have a deterministic behavior
-
-	with DDPG( S_DIM, A_DIM, STATE_SCALE, ACTION_SCALE, GAMMA, TAU, BUFFER_SIZE, MINIBATCH_SIZE, ACTOR_LR, CRITIC_LR, BETA_L2,
-	           summary_dir=SUMMARY_DIR, seed=SEED, single_thread=SINGLE_THREAD ) as ddpg :
-
-
-		if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
-
-			if len( sys.argv ) > 1 and sys.argv[1] == 'load' :
-				if len( sys.argv ) > 2 :
-					ddpg.load_model( sys.argv[2] + '/session' )
-				else :
-					ddpg.load_model( session_files )
-
-
-			np.random.seed( SEED )
-
-			training_env = ENV()
-			eval_env = ENV()
-
-			n_ep = 0
-			Li = 0
-
-			import time
-			start = time.time()
-
-			reward_graph = Monitor( titles='Average reward per trial', xlabel='trials', keep=False )
-
-			with Loop_handler() as interruption :
-
-				while not interruption() and n_ep < EP_MAX :
-
-					s = training_env.reset()
-					expl = False
-
-					for _ in range( EP_LEN ) :
-
-						# Choose an action:
-						if np.random.rand() < 0.1 :
-							if expl :
-								expl = False
-							else :
-								expl = True
-								a = np.random.uniform( -1, 1, A_DIM )
-						if not expl :
-							a = ddpg.get_action( s )
-
-						# Do one step:
-						s2, r, terminal, _ = training_env.step( a )
-
-						# Scale the reward:
-						#r = r/10
-
-						# Store the experience in the replay buffer:
-						ddpg.replay_buffer.append(( s, a, r, terminal, s2 ))
-
-						# When there is enough samples, train the networks (on-line):
-						#if len( ddpg.replay_buffer ) > ddpg.minibatch_size :
-							#Li = ddpg.train()
-						
-						if terminal or interruption() :
-							break
-
-						s = s2
-
-					if interruption() :
-						break
-
-					n_ep += 1
-
-					# When there is enough samples, train the networks (off-line):
-					if len( ddpg.replay_buffer ) >= ddpg.minibatch_size :
-						Li = ddpg.train( ITER_PER_EP )
-
-
-					# Evaluate the policy:
-					if n_ep % 1 == 0 :
-						s = eval_env.reset( store_data=True )
-						for t in range( EP_LEN ) :
-							s, _, done, _ = eval_env.step( ddpg.get_action( s ) )
-							if done : break
-						print( 'It %i | Ep %i | Li %+8.4f | ' % ( ddpg.n_iter, n_ep, Li ), end='', flush=True )
-						eval_env.print_eval()
-						sys.stdout.flush()
-						ddpg.reward_summary( eval_env.get_Rt() )
-						reward_graph.add_data( n_ep, eval_env.get_Rt() )
-
-
-			end = time.time()
-			print( 'Elapsed time: %.3f' % ( end - start ) )
-
-			answer = input( '\nSave network parameters in ' + session_dir + '? (y) ' )
-			if answer.strip() == 'y' :
-				os.makedirs( session_dir, exist_ok=True )
-				ddpg.save_model( session_files )
-				print( 'Parameters saved.' )
-			else :
-				answer = input( 'Where to store network parameters? (leave empty to discard data) ' )
-				if answer.strip() :
-					os.makedirs( answer, exist_ok=True )
-					ddpg.save_model( answer + '/session' )
-					print( 'Parameters saved in %s.' % answer )
-				else :
-					print( 'Data discarded.' )
-
-		else :
-
-
-			if len( sys.argv ) > 2 :
-				ddpg.load_model( sys.argv[2] + '/session' )
-			else :
-				ddpg.load_model( session_files )
-
-
-			test_env = ENV( 180, store_data=True )
-			s = test_env.get_obs()
-			for t in range( EP_LEN ) :
-				s, _, done, _ = test_env.step( ddpg.get_action( s ) )
-				if done : break
-			print( 'Trial result: ', end='' )
-			test_env.print_eval()
-			test_env.plot3D( ddpg.get_action, ddpg.get_V_value )
-			test_env.plot_trial()
-			test_env.show()
