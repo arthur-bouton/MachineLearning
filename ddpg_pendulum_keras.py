@@ -3,9 +3,9 @@
 Train a simple pendulum with the Deep Deterministic Policy Gradient (DDPG) algorithm.
 
 Start a new training by calling this script without argument.
-When the algorithm has converged, send SIGINT to stop it and save the model by answering "y" when prompted to.
+When the algorithm has converged, send SIGINT to stop it and save the model and the content of the replay buffer by answering "y" when prompted to.
 Then run the script with the word "eval" as first argument in order to evaluate the obtained policy.
-The training can be took up with a saved model by calling the script with the word "load" as first argument.
+The training can be took up with a saved model and replay buffer by calling the script with the word "load" as first argument.
 
 Author: Arthur Bouton [arthur.bouton@gadz.org]
 
@@ -52,49 +52,51 @@ data_id = 'test1'
 
 script_name = os.path.splitext( os.path.basename( __file__ ) )[0]
 
-# Name of the files where to store the network parameters:
+# Name of the files where to store the network parameters and replay buffer by default:
 session_dir = './training_data/' + script_name + '/' + data_id
-session_files = session_dir + '/session'
 
 # Parameters for the training:
 ENV = Pendulum # A class defining the environment
 EP_LEN = 100 # Number of steps for one episode
 EP_MAX = 2000 # Maximal number of episodes for the training
 ITER_PER_EP = 200 # Number of training iterations between each episode
-S_DIM = 2 # Dimension of the state space
-A_DIM = 1 # Dimension of the action space
-STATE_SCALE = [ np.pi, 2*np.pi ] # A scalar or a vector to normalize the state
-ACTION_SCALE = None # A scalar or a vector to scale the actions
-GAMMA = 0.7 # Discount factor of the reward
-TAU = 0.001 # Soft target update factor
-BUFFER_SIZE = 100000 # Maximal size of the replay buffer
-MINIBATCH_SIZE = 128 # Size of each minibatch
-ACTOR_LR = 0.0001 # Learning rate of the actor network
-CRITIC_LR = 0.001 # Learning rate of the critic network
-BETA_L2 = 0 # Ridge regularization coefficient
-#ALPHA_SAMPLING = 1 # Exponent interpolating between uniform sampling (0) and greedy prioritization (1) (DDPG_PER only)
-#BETA_IS = 0 # Exponent of the importance-sampling weights (if 0, no importance sampling) (DDPG_PER only)
-SUMMARY_DIR = None # No summaries
-#SUMMARY_DIR = '/tmp/' + script_name + '/' + data_id # Directory where to save summaries
-SEED = None # Random seed for the initialization of all random generators
-SINGLE_THREAD = False # Force the execution on a single core in order to have a deterministic behavior
 
-ddpg = DDPG( S_DIM, A_DIM, STATE_SCALE, ACTION_SCALE, GAMMA, TAU, BUFFER_SIZE, MINIBATCH_SIZE, ACTOR_LR, CRITIC_LR, BETA_L2,
-		   actor_def=actor, critic_def=critic,
-		   #alpha_sampling=ALPHA_SAMPLING, beta_IS=BETA_IS, # (DDPG_PER only)
-		   summary_dir=SUMMARY_DIR, seed=SEED, single_thread=SINGLE_THREAD, sess=sess )
+hyper_params = {}
+hyper_params['s_dim'] = 2 # Dimension of the state space
+hyper_params['a_dim'] = 1 # Dimension of the action space
+hyper_params['state_scale'] = [ np.pi, 2*np.pi ] # A scalar or a vector to normalize the state
+hyper_params['action_scale'] = None # A scalar or a vector to scale the actions
+hyper_params['sess'] = sess # The TensorFlow session to use
+hyper_params['actor_def'] = actor # The function defining the actor network
+hyper_params['critic_def'] = critic # The function defining the critic network
+hyper_params['gamma'] = 0.7 # Discount factor of the reward
+hyper_params['tau'] = 1e-3 # Soft target update factor
+hyper_params['buffer_size'] = 1e4 # Maximal size of the replay buffer
+hyper_params['minibatch_size'] = 64 # Size of each minibatch
+hyper_params['actor_lr'] = 1e-3 # Learning rate of the actor network
+hyper_params['critic_lr'] = 1e-3 # Learning rate of the critic network
+hyper_params['beta_L2'] = 0 # Ridge regularization coefficient
+#hyper_params['alpha_sampling'] = 1 # Exponent interpolating between uniform sampling (0) and greedy prioritization (1) (DDPG_PER only)
+#hyper_params['beta_IS'] = 0 # Exponent of the importance-sampling weights (if 0, no importance sampling) (DDPG_PER only)
+hyper_params['summary_dir'] = None # No summaries
+#hyper_params['summary_dir'] = '/tmp/' + script_name + '/' + data_id # Directory where to save summaries
+hyper_params['seed'] = None # Random seed for the initialization of all random generators
+hyper_params['single_thread'] = False # Force the execution on a single core in order to have a deterministic behavior
+
+ddpg = DDPG( **hyper_params )
 
 
 if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 
 	if len( sys.argv ) > 1 and sys.argv[1] == 'load' :
 		if len( sys.argv ) > 2 :
-			ddpg.load_model( sys.argv[2] + '/session' )
-		else :
-			ddpg.load_model( session_files )
+			session_dir = sys.argv[2]
+		ddpg.load_model( session_dir + '/session' )
+		if not ddpg.load_replay_buffer( session_dir + '/replay_buffer.pkl' ) :
+			print( 'Could not find %s: starting with an empty replay buffer.' % ( session_dir + '/replay_buffer.pkl' ) )
 
 
-	np.random.seed( SEED )
+	np.random.seed( hyper_params['seed'] )
 
 	training_env = ENV()
 	eval_env = ENV()
@@ -112,18 +114,16 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 		while not interruption() and n_ep < EP_MAX :
 
 			s = training_env.reset()
-			expl = False
+			exploration = False
 
 			for _ in range( EP_LEN ) :
 
 				# Choose an action:
 				if np.random.rand() < 0.1 :
-					if expl :
-						expl = False
-					else :
-						expl = True
-						a = np.random.uniform( -1, 1, A_DIM )
-				if not expl :
+					exploration = not exploration
+					if exploration :
+						a = np.random.uniform( -1, 1, hyper_params['a_dim'] )
+				if not exploration :
 					a = ddpg.get_action( s )
 					#a = np.clip( ddpg.get_action( s ), -1, 1 )
 
@@ -171,27 +171,33 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 	end = time.time()
 	print( 'Elapsed time: %.3f' % ( end - start ) )
 
+	save_data = True
 	answer = input( '\nSave network parameters in ' + session_dir + '? (y) ' )
-	if answer.strip() == 'y' :
-		os.makedirs( session_dir, exist_ok=True )
-		ddpg.save_model( session_files )
-		print( 'Parameters saved.' )
-	else :
+	if answer.strip() != 'y' :
 		answer = input( 'Where to store network parameters? (leave empty to discard data) ' )
 		if answer.strip() :
-			os.makedirs( answer, exist_ok=True )
-			ddpg.save_model( answer + '/session' )
-			print( 'Parameters saved in %s.' % answer )
+			session_dir = answer
 		else :
-			print( 'Data discarded.' )
+			save_data = False
+	if save_data :
+		os.makedirs( session_dir, exist_ok=True )
+		ddpg.save_model( session_dir + '/session' )
+		print( 'Parameters saved in %s.' % session_dir )
+		answer = input( 'Save the replay buffer? (y) ' )
+		if answer.strip() == 'y' :
+			ddpg.save_replay_buffer( session_dir + '/replay_buffer.pkl' )
+			print( 'Replay buffer saved as well.' )
+		else :
+			print( 'Replay buffer discarded.' )
+	else :
+		print( 'Data discarded.' )
 
 else :
 
 
 	if len( sys.argv ) > 2 :
-		ddpg.load_model( sys.argv[2] + '/session' )
-	else :
-		ddpg.load_model( session_files )
+		session_dir = sys.argv[2]
+	ddpg.load_model( session_dir + '/session' )
 
 
 	test_env = ENV( 180, store_data=True )

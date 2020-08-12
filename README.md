@@ -17,6 +17,8 @@
 [2] Lillicrap, Timothy P., et al. "Continuous control with deep reinforcement learning." arXiv preprint arXiv:1509.02971 (2015).<br />
 [3] Schaul, Tom, et al. "Prioritized experience replay." arXiv preprint arXiv:1511.05952 (2015).
 
+<br />
+<br />
 
 
 ## Examples of use of the looptools module

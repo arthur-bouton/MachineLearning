@@ -90,7 +90,7 @@ def critic_network_def( states, actions ) :
 class DDPG() :
 
 	def __init__( self, s_dim, a_dim, state_scale=None, action_scale=None,
-	              gamma=0.99, tau=0.001, buffer_size=1000000, minibatch_size=64, actor_lr=0.0001, critic_lr=0.001, beta_L2=0,
+	              gamma=0.99, tau=1e-3, buffer_size=1e6, minibatch_size=64, actor_lr=1e-4, critic_lr=1e-3, beta_L2=0,
 				  actor_def=actor_network_def, critic_def=critic_network_def,
 				  summary_dir=None, seed=None, single_thread=False, sess=None ) :
 		"""
@@ -122,7 +122,7 @@ class DDPG() :
 		self.n_iter = 0
 
 		# Instantiation of the replay buffer:
-		self.replay_buffer = deque( maxlen=buffer_size )
+		self.replay_buffer = deque( maxlen=int( buffer_size ) )
 		random.seed( seed )
 
 		######################
