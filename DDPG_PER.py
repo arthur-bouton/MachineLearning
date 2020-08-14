@@ -357,6 +357,9 @@ class DDPG() :
 
 	def train( self, iterations=1 ) :
 
+		if len( self.replay_buffer ) < self.minibatch_size :
+			return 0
+
 		Lt = 0
 
 		for _ in trange( iterations, desc='Training the networks', leave=False ) :

@@ -60,6 +60,7 @@ ENV = Pendulum # A class defining the environment
 EP_LEN = 100 # Number of steps for one episode
 EP_MAX = 2000 # Maximal number of episodes for the training
 ITER_PER_EP = 200 # Number of training iterations between each episode
+EVAL_FREQ = 1 # Frequency of the policy evaluation
 
 hyper_params = {}
 hyper_params['s_dim'] = 2 # Dimension of the state space
@@ -135,10 +136,6 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 
 				# Store the experience in the replay buffer:
 				ddpg.replay_buffer.append(( s, a, r, terminal, s2 ))
-
-				# When there is enough samples, train the networks (on-line):
-				#if len( ddpg.replay_buffer ) > ddpg.minibatch_size :
-					#Li = ddpg.train()
 				
 				if terminal or interruption() :
 					break
@@ -150,18 +147,17 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 
 			n_ep += 1
 
-			# When there is enough samples, train the networks (off-line):
-			if len( ddpg.replay_buffer ) >= ddpg.minibatch_size :
-				Li = ddpg.train( ITER_PER_EP )
+			# Train the networks (off-line):
+			Li = ddpg.train( ITER_PER_EP )
 
 
 			# Evaluate the policy:
-			if n_ep % 1 == 0 :
+			if Li != 0 and n_ep % EVAL_FREQ == 0 :
 				s = eval_env.reset( store_data=True )
 				for t in range( EP_LEN ) :
 					s, _, done, _ = eval_env.step( ddpg.get_action( s ) )
 					if done : break
-				print( 'It %i | Ep %i | Li %+8.4f | ' % ( ddpg.n_iter, n_ep, Li ), end='', flush=True )
+				print( 'It %i | Ep %i | Li %+8.4f | ' % ( ddpg.n_iter, n_ep, Li ), end='' )
 				eval_env.print_eval()
 				sys.stdout.flush()
 				ddpg.reward_summary( eval_env.get_Rt() )
