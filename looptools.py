@@ -196,7 +196,7 @@ class Monitor :
 		plt.show()
 
 		# Create the window:
-		self._update_figure()
+		self.update()
 
 		# Make the window persistent:
 		if keep :
@@ -216,7 +216,7 @@ class Monitor :
 
 			atexit.register( keep_figure_open )
 	
-	def add_data( self, *new_data ) :
+	def add_data( self, *new_data, update=True ) :
 		""" 
 		Add new data to the figure.
 
@@ -258,9 +258,11 @@ class Monitor :
 		for ydata, values in zip( self._ydata, new_y_values ) :
 			ydata.extend( values )
 
-		self._update_figure()
+		if update :
+			self.update()
 
-	def _update_figure( self ) :
+	def update( self ) :
+		""" Update the figure. """
 
 		# Trim the data if required:
 		if self.datamax is not None and len( self._xdata ) > self.datamax :
@@ -320,7 +322,7 @@ class Monitor :
 		self._xdata = []
 		self._ydata = [ [] for _ in self._ydata ]
 
-		self._update_figure()
+		self.update()
 
 	def close( self ) :
 		""" Close the figure. """
@@ -356,7 +358,7 @@ class Monitor :
 		for i, y in enumerate( self._ydata ) :
 			y[key] = y_values[i]
 
-		self._update_figure()
+		self.update()
 
 	def __delitem__( self, key ) :
 
@@ -364,7 +366,7 @@ class Monitor :
 		for i, y in enumerate( self._ydata ) :
 			del y[key]
 
-		self._update_figure()
+		self.update()
 
 	def __call__( self, *data ) :
 		"""
