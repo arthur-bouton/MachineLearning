@@ -2,6 +2,7 @@
 Implementation of scalable Multilayer Perceptron (MLP) and Radial Basis Function network (RBF) with numpy only.
 
 Author: Arthur Bouton [arthur.bouton@gadz.org]
+
 """
 import numpy as np
 from copy import deepcopy

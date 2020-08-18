@@ -11,6 +11,7 @@ Dependency:
 tensorflow 1.13.1
 """
 import tensorflow as tf
+from sumtree_sampler import Sumtree_sampler
 import numpy as np
 import random
 import sys
@@ -88,95 +89,12 @@ def critic_network_def( states, actions ) :
 	return Q_value
 
 
-class Sumtree_sampler :
-	"""
-	A sum tree structure to efficiently sample items according to their relative priorities
-	"capacity" is the maximum amount of items that will be possibly stored
-	"""
-
-	def __init__( self, capacity ) :
-		self.capacity = capacity
-		self.tree = np.zeros( 2*capacity - 1 )
-		self.data = np.zeros( capacity, dtype=object )
-		self.next_index = 0
-		self.full = False
-		self.max_p_seen = 1
-
-	def __len__( self ) :
-		""" Get the current number of items stored so far """
-		if not self.full :
-			return self.next_index
-		else :
-			return self.capacity
-
-	def _propagate( self, leaf_index, change ) :
-		parent_index = ( leaf_index - 1 )//2
-
-		self.tree[parent_index] += change
-
-		if parent_index > 0 :
-			self._propagate( parent_index, change )
-
-	def _retrieve( self, value, leaf_index=0 ) :
-		left = 2*leaf_index + 1
-		right = left + 1
-
-		if left >= len( self.tree ) :
-			return leaf_index
-
-		if value < self.tree[left] or self.tree[right] == 0 :
-			return self._retrieve( value, left )
-		else :
-			return self._retrieve( value - self.tree[left], right )
-
-	def append( self, data, p=None ) :
-		""" Add a new item """
-
-		if p is None :
-			p = self.max_p_seen
-		else :
-			self.max_p_seen = max( self.max_p_seen, p )
-
-		self.data[self.next_index] = data
-		self.update( self.next_index, p )
-
-		self.next_index += 1
-		if self.next_index >= self.capacity :
-			self.next_index = 0
-			self.full = True
-
-	def update( self, index, p ) :
-		""" Update item's priority by referring to its index """
-		leaf_index = index + self.capacity - 1
-
-		self._propagate( leaf_index, p - self.tree[leaf_index] )
-		self.tree[leaf_index] = p
-
-		self.max_p_seen = max( self.max_p_seen, p )
-
-	def sum( self ) :
-		""" The total sum of the priorities from all the items stored """
-		return self.tree[0]
-
-	def sample( self, length=1 ) :
-		""" Sample a list of items according to their priorities """
-		data, indices, priorities = [], [], []
-		for _ in range( length ) :
-			leaf_index = self._retrieve( random.uniform( 0, self.tree[0] ) )
-			index = leaf_index - self.capacity + 1
-			data.append( self.data[index] )
-			indices.append( index )
-			priorities.append( self.tree[leaf_index] )
-
-		return data, indices, priorities
-
-
 class DDPG() :
 
 	def __init__( self, s_dim, a_dim, state_scale=None, action_scale=None,
 	              gamma=0.99, tau=1e-3, buffer_size=1e6, minibatch_size=64, actor_lr=1e-4, critic_lr=1e-3, beta_L2=0,
 				  actor_def=actor_network_def, critic_def=critic_network_def,
-				  alpha_sampling=1, beta_IS=0,
+				  alpha_sampling=1, beta_IS=1,
 				  summary_dir=None, seed=None, single_thread=False, sess=None ) :
 		"""
 		s_dim: Dimension of the state space
@@ -229,7 +147,7 @@ class DDPG() :
 		else :
 			scaled_states = self.states
 
-		# Declaration of the actor and the critic networks:
+		# Declaration of the actor network:
 		with tf.variable_scope( 'Actor' ) :
 			self.mu_actions = actor_def( scaled_states, self.a_dim )
 			if action_scale is not None :
@@ -238,6 +156,7 @@ class DDPG() :
 			actor_params = tf.get_collection( tf.GraphKeys.TRAINABLE_VARIABLES, scope=tf.get_variable_scope().name )
 		tf.identity( self.mu_actions, name='Actor_Output' )
 
+		# Declaration of the critic network:
 		with tf.variable_scope( 'Critic' ) :
 			if action_scale is not None :
 				scaled_actions = tf.divide( self.actions, action_scale, 'scale_actions' )

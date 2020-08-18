@@ -1,3 +1,7 @@
+"""
+Author: Arthur Bouton [arthur.bouton@gadz.org]
+
+"""
 from numpy import *
 from scipy.integrate import odeint
 from matplotlib.pyplot import *
@@ -7,7 +11,6 @@ class Pendulum() :
 	""" 
 	A simple pendulum to be controlled by a torque at its hinge.
 
-	Author: Arthur Bouton [arthur.bouton@gadz.org]
 	"""
 
 	s_dim = 2

@@ -142,7 +142,7 @@ class DDPG() :
 		else :
 			scaled_states = self.states
 
-		# Declaration of the actor and the critic networks:
+		# Declaration of the actor network:
 		with tf.variable_scope( 'Actor' ) :
 			self.mu_actions = actor_def( scaled_states, self.a_dim )
 			if action_scale is not None :
@@ -151,6 +151,7 @@ class DDPG() :
 			actor_params = tf.get_collection( tf.GraphKeys.TRAINABLE_VARIABLES, scope=tf.get_variable_scope().name )
 		tf.identity( self.mu_actions, name='Actor_Output' )
 
+		# Declaration of the critic network:
 		with tf.variable_scope( 'Critic' ) :
 			if action_scale is not None :
 				scaled_actions = tf.divide( self.actions, action_scale, 'scale_actions' )
