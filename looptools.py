@@ -228,6 +228,10 @@ class Monitor :
 			in their plot order.
 			Optionally, the corresponding x-axis value(s) can be specified as first argument. If not specified,
 			`xstep` is used as a gap between each x-axis value (1 by default).
+		update : bool, optional, default: True
+			Wether to update the figure away after to include the new data. If False, the figure can be updated
+			later with the method 'update()' so as to speed up the addition of data.
+
 		"""
 
 		# Check the number of arguments provided:
@@ -313,6 +317,7 @@ class Monitor :
 		-------
 		data : a tuple of lists of floats
 			The first list contains the x-axis values and is followed by the lists of values for each variable plotted.
+
 		"""
 
 		return ( self._xdata, *self._ydata )
@@ -380,6 +385,7 @@ class Monitor :
 
 			del monitor[:a]
 			del monitor[b-a:]
+
 		"""
 
 		self._xdata = []
@@ -401,7 +407,7 @@ def strange( input_string ) :
 		A colon defines the two bounds of a range, which can go in ascending
 		or descending order.
 		If the number after the colon is preceded by a 'x', it defines the
-		amount of successive elements desired.
+		amount of successive elements desired rather than the second bound.
 		An optional extra colon followed by an integer after a range specifies
 		the step to keep between each value of the range.
 
@@ -412,6 +418,7 @@ def strange( input_string ) :
 	strange( '-2:-6:2' )     -> [-2, -4, -6]
 	strange( '2:x6:2' )      -> [2, 4, 6, 8, 10, 12]
 	strange( '2:x6:-1' )     -> [2, 1, 0, -1, -2, -3]
+
 	"""
 
 	output_list = []
@@ -617,6 +624,7 @@ class Datafile :
 		Or in order to process the first series as the x-axis values:
 
 			Monitor( len( data ) - 1 ).add_data( *data )
+
 		"""
 
 		if len( self._columns ) == 1 :
@@ -638,6 +646,7 @@ class Datafile :
 		-------
 		data : a list of lists of values
 			The list the values for each line extracted from the file.
+
 		"""
 
 		return [ values for values in self ]

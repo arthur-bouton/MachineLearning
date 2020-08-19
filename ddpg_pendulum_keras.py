@@ -77,11 +77,11 @@ hyper_params['minibatch_size'] = 64 # Size of each minibatch
 hyper_params['actor_lr'] = 1e-3 # Learning rate of the actor network
 hyper_params['critic_lr'] = 1e-3 # Learning rate of the critic network
 hyper_params['beta_L2'] = 0 # Ridge regularization coefficient
-#hyper_params['alpha_sampling'] = 1 # Exponent interpolating between uniform sampling (0) and greedy prioritization (1) (DDPG_PER only)
+#hyper_params['alpha_sampling'] = 1 # Exponent interpolating between a uniform sampling (0) and a greedy prioritization (1) (DDPG_PER only)
 #hyper_params['beta_IS'] = 1 # Exponent of the importance-sampling weights (if 0, no importance sampling) (DDPG_PER only)
 hyper_params['summary_dir'] = None # No summaries
-#hyper_params['summary_dir'] = '/tmp/' + script_name + '/' + data_id # Directory where to save summaries
-hyper_params['seed'] = None # Random seed for the initialization of all random generators
+#hyper_params['summary_dir'] = '/tmp/' + script_name + '/' + data_id # Directory in which to save the summaries
+hyper_params['seed'] = None # Seed for the initialization of all random generators
 hyper_params['single_thread'] = False # Force the execution on a single core in order to have a deterministic behavior
 
 ddpg = DDPG( **hyper_params )

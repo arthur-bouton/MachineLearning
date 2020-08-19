@@ -88,30 +88,70 @@ def critic_network_def( states, actions ) :
 
 
 class DDPG() :
+	"""
+	Deep Deterministic Policy Gradient algorithm.
+
+	Parameters
+	----------
+	s_dim : int
+		Dimension of the state space.
+	a_dim : int
+		Dimension of the action space.
+	state_scale : float or list of floats, optional, default: None
+		A scalar or a vector to normalize the state.
+	action_scale : float or list of floats, optional, default: None
+		A scalar or a vector to scale the actions.
+	gamma : float, optional, default: 0.99
+		Discount factor of the reward.
+	tau : float, optional, default: 1e-3
+		Soft target update factor.
+	buffer_size : int, optional, default: 1e6
+		Maximal size of the replay buffer.
+	minibatch_size : int, optional, default: 64
+		Size of each minibatch.
+	actor_lr : float, optional, default: 1e-4
+		Learning rate of the actor network.
+	critic_lr : float, optional, default: 1e-3
+		Learning rate of the critic network.
+	beta_L2 : float, optional, default: 0
+		Ridge regularization coefficient.
+	actor_def : function, optional, default: actor_network_def
+		Function defining the actor network.
+		It has to take the state tensor and the dimension of the
+		action space as inputs and return the action tensor.
+	critic_def : function, optional, default: critic_network_def
+		Function defining the critic network.
+		It has to take the state and action tensors as inputs and
+		return the Q value tensor.
+	summary_dir : str, optional, default: None
+		Directory in which to save the summaries.
+		If None, no summaries are created.
+	seed : int, optional, default: None
+		Seed for the initialization of random generators.
+	single_thread : bool, optional, default: False
+		Whether to force the execution on a single core in order to
+		have a deterministic behavior.
+	sess : tf.Session, optional, default: None
+		A TensorFlow session already initialized.
+		If None, a new session is created.
+
+	Examples
+	--------
+	# Fill the replay buffer with transitions:
+	ddpg.replay_buffer.append(( state, action, reward, is_terminal, next_state ))
+
+	# Train the networks:
+	loss = ddpg.train( nb_iterations )
+
+	# Infer the actions from the actor network:
+	action = ddpg.get_action( state )
+
+	"""
 
 	def __init__( self, s_dim, a_dim, state_scale=None, action_scale=None,
 	              gamma=0.99, tau=1e-3, buffer_size=1e6, minibatch_size=64, actor_lr=1e-4, critic_lr=1e-3, beta_L2=0,
 				  actor_def=actor_network_def, critic_def=critic_network_def,
 				  summary_dir=None, seed=None, single_thread=False, sess=None ) :
-		"""
-		s_dim: Dimension of the state space
-		a_dim: Dimension of the action space
-		state_scale: A scalar or a vector to normalize the state
-		action_scale: A scalar or a vector to scale the actions
-		gamma: Discount factor of the reward
-		tau: Soft target update factor
-		buffer_size: Maximal size of the replay buffer
-		minibatch_size: Size of each minibatch
-		actor_lr: Learning rate of the actor network
-		critic_lr: Learning rate of the critic network
-		beta_L2: Ridge regularization coefficient
-		actor_def: Function defining the actor network
-		critic_def: Function defining the critic network
-		summary_dir: Directory where to save summaries
-		seed: Random seed for the initialization of random generators
-		single_thread: Force the execution on a single core in order to have a deterministic behavior
-		sess: A TensorFlow session already initialized
-		"""
 
 		self.s_dim = s_dim
 		self.a_dim = a_dim
