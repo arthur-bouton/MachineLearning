@@ -28,8 +28,6 @@ class Pendulum() :
 		self.reset( initial_angle, store_data, include_stddev )
 	
 	def model( self, x, t, u ) :
-		#u = u/5
-		u = clip( u, -self.umax, self.umax )
 		ddtheta = -self.g/self.l*sin( x[0] - pi ) - self.k/self.m/self.l**2*x[1] + u/self.m/self.l**2
 		#if t > 6 and t < 6.05 :
 			#ddtheta += 5*umax/self.m/self.l**2
@@ -59,6 +57,8 @@ class Pendulum() :
 		return self.get_obs()
 
 	def step( self, u, stddev=0 ) :
+
+		u = clip( u, -self.umax, self.umax )
 
 		self.x = odeint( self.model, self.x, [ self.t, self.t+self.timestep ], (u,), self.d_model )[-1]
 		#self.x = odeint( self.model, self.x, [ self.t, self.t+self.timestep ], (u,) )[-1]
@@ -156,8 +156,8 @@ class Pendulum() :
 		if self.store_data and critic is not None :
 			zc = []
 			for x in self.x_data :
-				zc.append( critic( x*pi/180 ) + 5 )
 				#zc.append( critic( x*pi/180 ) )
+				zc.append( critic( x*pi/180 ) + 5 )
 
 		elev = 30 ; azim = -120
 

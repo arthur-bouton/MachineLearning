@@ -12,8 +12,6 @@ import tensorflow as tf
 import numpy as np
 from collections import deque
 import random
-import sys
-import os
 from tqdm import trange
 
 
@@ -47,8 +45,6 @@ def actor_network_def( states, a_dim ) :
 		b3 = tf.get_variable( 'bias', [a_dim], tf.float32, tf.initializers.random_uniform( -bmax, bmax ) )
 		o3 = tf.add( tf.matmul( a2, w3 ), b3 )
 		action = tf.nn.tanh( o3 )
-		#action = o3
-		#action = tf.clip_by_value( o3, -1, 1 )
 
 	return action
 
@@ -102,7 +98,7 @@ class DDPG() :
 	action_scale : float or list of floats, optional, default: None
 		A scalar or a vector to scale the actions.
 	gamma : float, optional, default: 0.99
-		Discount factor of the reward.
+		Discount factor applied to the reward.
 	tau : float, optional, default: 1e-3
 		Soft target update factor.
 	buffer_size : int, optional, default: 1e6
@@ -127,13 +123,13 @@ class DDPG() :
 		Directory in which to save the summaries.
 		If None, no summaries are created.
 	seed : int, optional, default: None
-		Seed for the initialization of random generators.
-	single_thread : bool, optional, default: False
-		Whether to force the execution on a single core in order to
-		have a deterministic behavior.
+		Random seed for the initialization of random generators.
 	sess : tf.Session, optional, default: None
 		A TensorFlow session already initialized.
 		If None, a new session is created.
+	single_thread : bool, optional, default: False
+		Whether to force the execution on a single core in order to
+		have a deterministic behavior (sess=None only).
 
 	Examples
 	--------
@@ -151,10 +147,8 @@ class DDPG() :
 	def __init__( self, s_dim, a_dim, state_scale=None, action_scale=None,
 	              gamma=0.99, tau=1e-3, buffer_size=1e6, minibatch_size=64, actor_lr=1e-4, critic_lr=1e-3, beta_L2=0,
 				  actor_def=actor_network_def, critic_def=critic_network_def,
-				  summary_dir=None, seed=None, single_thread=False, sess=None ) :
+				  summary_dir=None, seed=None, sess=None, single_thread=False ) :
 
-		self.s_dim = s_dim
-		self.a_dim = a_dim
 		self.gamma = gamma
 		self.minibatch_size = minibatch_size
 		self.summaries = summary_dir is not None
@@ -172,8 +166,8 @@ class DDPG() :
 		# Set the graph-level random seed:
 		tf.set_random_seed( seed )
 
-		self.states = tf.placeholder( tf.float32, [None, self.s_dim], 'States' )
-		self.actions = tf.placeholder( tf.float32, [None, self.a_dim], 'Actions' )
+		self.states = tf.placeholder( tf.float32, [None, s_dim], 'States' )
+		self.actions = tf.placeholder( tf.float32, [None, a_dim], 'Actions' )
 
 		# Scaling of the inputs:
 		if state_scale is not None :
@@ -184,7 +178,7 @@ class DDPG() :
 
 		# Declaration of the actor network:
 		with tf.variable_scope( 'Actor' ) :
-			self.mu_actions = actor_def( scaled_states, self.a_dim )
+			self.mu_actions = actor_def( scaled_states, a_dim )
 			if action_scale is not None :
 				action_scale = tf.constant( action_scale, tf.float32, name='action_scale' )
 				self.mu_actions = tf.multiply( self.mu_actions, action_scale, 'scale_actions' )

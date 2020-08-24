@@ -6,12 +6,12 @@
 	- A container-like class to plot variables incrementally on a persistent figure.
 	- An iterable class to extract numerical data from a file.
 - ***neural_networks.py***: Implementation of scalable Multilayer Perceptron (MLP) and Radial Basis Function network (RBF) with numpy only.
+- ***sumtree_sampler.py***: A sum tree structure to efficiently sample items according to their relative priorities.
 - ***pendulum.py***: A simple pendulum to be controlled by a torque at its hinge.
 - ***CACLA_pendulum.py***: Implementation of the Continuous Actor Critic Learning Automaton (CACLA) [1] to balance a pendulum.
 - ***DDPG_vanilla.py***: Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [2] with TensorFlow.
-- ***sumtree_sampler.py***: A sum tree structure to efficiently sample items according to their relative priorities.
 - ***DDPG_PER.py***: Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [2] with TensorFlow and enhanced with Prioritized Experience Replay (PER) [3].
-- ***ddpg_pendulum_keras.py***: Training example of the DDPG algorithm to balance a pendulum using neural networks defined with Keras.
+- ***ddpg_pendulum.py***: Training example of the DDPG algorithm to balance a pendulum using neural networks defined with Keras.
 
 [1] Van Hasselt, Hado, and Marco A. Wiering. "Reinforcement learning in continuous action spaces."<br />
     2007 IEEE International Symposium on Approximate Dynamic Programming and Reinforcement Learning. IEEE, 2007.<br />
