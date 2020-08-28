@@ -7,18 +7,21 @@
 	- An iterable class to extract numerical data from a file.
 - ***neural_networks.py***: Implementation of scalable Multilayer Perceptron (MLP) and Radial Basis Function network (RBF) with numpy only.
 - ***sumtree_sampler.py***: A sum tree structure to efficiently sample items according to their relative priorities.
-- ***pendulum.py***: A simple pendulum to be controlled by a torque at its hinge.
 - ***CACLA_pendulum.py***: Implementation of the Continuous Actor Critic Learning Automaton (CACLA) [1] to balance a pendulum.
 - ***DDPG_vanilla.py***: Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [2] with TensorFlow.
 - ***DDPG_PER.py***: Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [2] with TensorFlow and enhanced with Prioritized Experience Replay (PER) [3].
 - ***PPO.py***: Multithreaded implementation of the Proximal Policy Optimization (PPO) algorithm [4] with TensorFlow.
-- ***ddpg_pendulum.py***: Training example of the DDPG algorithm to balance a pendulum using neural networks defined with Keras.
-- ***ppo_pendulum.py***: Training example of the PPO algorithm to balance a pendulum using neural networks defined with Keras and multithreaded workers.
+- ***pendulum.py***: A simple pendulum to be controlled by a torque at its hinge.
+- ***cartpole.py***: A free pendulum mounted on a cart which lateral velocity is controlled.
+- ***ddpg_pendulum.py***: Training example of the DDPG algorithm to swing up the pendulum.
+- ***ddpg_cartpole.py***: Training example of the DDPG algorithm to swing up the cart pole.
+- ***ppo_pendulum.py***: Training example of the PPO algorithm to swing up the pendulum using multithreaded workers.
+- ***ppo_cartpole.py***: Training example of the PPO algorithm to swing up the cart pole using workers running in the main thread.
 
 [1] Van Hasselt, Hado, and Marco A. Wiering. "Reinforcement learning in continuous action spaces."<br />
     2007 IEEE International Symposium on Approximate Dynamic Programming and Reinforcement Learning. IEEE, 2007.<br />
 [2] Lillicrap, Timothy P., et al. "Continuous control with deep reinforcement learning." arXiv preprint arXiv:1509.02971 (2015).<br />
-[3] Schaul, Tom, et al. "Prioritized experience replay." arXiv preprint arXiv:1511.05952 (2015).
+[3] Schaul, Tom, et al. "Prioritized experience replay." arXiv preprint arXiv:1511.05952 (2015).<br />
 [4] Schulman, John, et al. "Proximal policy optimization algorithms." arXiv preprint arXiv:1707.06347 (2017).
 
 <br />
