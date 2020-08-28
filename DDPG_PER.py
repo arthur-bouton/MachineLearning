@@ -206,45 +206,49 @@ class DDPG() :
 		# Declaration of the target networks:
 		with tf.variable_scope( 'Target_Networks' ) :
 			with tf.variable_scope( 'Target_Actor' ) :
-				target_mu_actions = actor_def( scaled_states, self.a_dim )
+				target_mu_actions = actor_def( scaled_states, a_dim )
 				target_actor_params = tf.get_collection( tf.GraphKeys.TRAINABLE_VARIABLES, scope=tf.get_variable_scope().name )
 			with tf.variable_scope( 'Target_Critic' ) :
 				self.target_Q_value = critic_def( scaled_states, target_mu_actions )
 				target_critic_params = tf.get_collection( tf.GraphKeys.TRAINABLE_VARIABLES, scope=tf.get_variable_scope().name )
 
 		# Update of the target network parameters:
-		with tf.variable_scope( 'update_target_networks' ) :
+		with tf.name_scope( 'Update_Target_Networks' ) :
 			sync_target_networks = [ tP.assign( P ) for P, tP in zip( actor_params + critic_params, target_actor_params + target_critic_params ) ]
 			self.update_target_actor = [ tP.assign( P*tau + tP*( 1 - tau ) ) for P, tP in zip( actor_params, target_actor_params ) ]
 			self.update_target_critic = [ tP.assign( P*tau + tP*( 1 - tau ) ) for P, tP in zip( critic_params, target_critic_params ) ]
 
 		# Computation of the new priorities and weights for prioritization and importance sampling:
-		self.alpha = tf.Variable( alpha_sampling, dtype=tf.float32, name='alpha_sampling', trainable=False )
-		self.beta = tf.Variable( beta_IS, dtype=tf.float32, name='beta_IS', trainable=False )
-		self.samp_p = tf.placeholder( tf.float32, [None, 1], 'Sampling_priorities' )
-		self.P_sum = tf.placeholder( tf.float32, (), 'Sum_of_sampling_priorities' )
-		self.N = tf.placeholder( tf.float32, (), 'Length_of_replay_buffer' )
 		self.y = tf.placeholder( tf.float32, [None, 1], 'Targets' )
+		with tf.variable_scope( 'Importance_Sampling' ) :
+			self.alpha = tf.Variable( alpha_sampling, dtype=tf.float32, name='alpha_sampling', trainable=False )
+			self.beta = tf.Variable( beta_IS, dtype=tf.float32, name='beta_IS', trainable=False )
+			self.samp_p = tf.placeholder( tf.float32, [None, 1], 'Sampling_priorities' )
+			self.P_sum = tf.placeholder( tf.float32, (), 'Sum_of_sampling_priorities' )
+			self.N = tf.placeholder( tf.float32, (), 'Length_of_replay_buffer' )
 
-		self.new_samp_p = tf.cond( self.alpha > 0, lambda : ( tf.abs( self.y - self.Q_value ) + 1e-3 )**self.alpha, lambda : tf.ones_like( self.samp_p ) )
-		IS_weights = tf.cond( self.beta > 0, lambda : self.P_sum/( self.N*self.samp_p )**self.beta, lambda : 1.0 )
-		IS_weights = tf.cond( self.beta > 0, lambda : IS_weights/tf.reduce_max( IS_weights ), lambda : 1.0 )
+			self.new_samp_p = tf.cond( self.alpha > 0, lambda : ( tf.abs( self.y - self.Q_value ) + 1e-3 )**self.alpha, lambda : tf.ones_like( self.samp_p ) )
+			IS_weights = tf.cond( self.beta > 0, lambda : self.P_sum/( self.N*self.samp_p )**self.beta, lambda : 1.0 )
+			IS_weights = tf.cond( self.beta > 0, lambda : IS_weights/tf.reduce_max( IS_weights ), lambda : 1.0 )
 
 		# Backpropagation in the critic network of the target errors:
-		self.L = tf.losses.mean_squared_error( self.y, self.Q_value, weights=IS_weights )
-		if beta_L2 > 0 :
-			L2 = beta_L2*tf.reduce_mean( [ tf.nn.l2_loss( v ) for v in critic_params if 'kernel' in v.name ] )
-			self.L += L2
-		critic_optimizer = tf.train.AdamOptimizer( critic_lr )
-		#self.train_critic = critic_optimizer.minimize( self.L, name='critic_backprop' )
-		critic_grads_and_vars = critic_optimizer.compute_gradients( self.L, critic_params )
-		self.train_critic = critic_optimizer.apply_gradients( critic_grads_and_vars, name='critic_backprop' )
+		with tf.name_scope( 'Critic_Backprop' ) :
+			self.L = tf.losses.mean_squared_error( self.y, self.Q_value, weights=IS_weights )
+			if beta_L2 > 0 :
+				with tf.name_scope( 'L2_regularization' ) :
+					L2 = beta_L2*tf.reduce_mean( [ tf.nn.l2_loss( v ) for v in critic_params if 'kernel' in v.name ] )
+					self.L += L2
+			critic_optimizer = tf.train.AdamOptimizer( critic_lr )
+			#self.train_critic = critic_optimizer.minimize( self.L, name='critic_backprop' )
+			critic_grads_and_vars = critic_optimizer.compute_gradients( self.L, critic_params )
+			self.train_critic = critic_optimizer.apply_gradients( critic_grads_and_vars, name='apply_backprop' )
 
 		# Application of the deterministic policy gradient to the actor network:
-		gradQ_a = tf.gradients( self.Q_value, self.actions, name='gradQ_a' )
-		gradQ_a_N = tf.divide( gradQ_a[0], tf.constant( minibatch_size, tf.float32, name='minibatch_size' ), 'normalize_over_batch' )
-		policy_gradients = tf.gradients( self.mu_actions, actor_params, -gradQ_a_N, name='policy_gradients' )
-		self.train_actor = tf.train.AdamOptimizer( actor_lr ).apply_gradients( zip( policy_gradients, actor_params ), name='apply_policy_gradients' )
+		with tf.name_scope( 'Policy_Gradient' ) :
+			gradQ_a = tf.gradients( self.Q_value, self.actions, name='gradQ_a' )
+			gradQ_a_N = tf.divide( gradQ_a[0], tf.constant( minibatch_size, tf.float32, name='minibatch_size' ), 'normalize_over_batch' )
+			policy_gradients = tf.gradients( self.mu_actions, actor_params, -gradQ_a_N, name='policy_gradients' )
+			self.train_actor = tf.train.AdamOptimizer( actor_lr ).apply_gradients( zip( policy_gradients, actor_params ), name='apply_policy_gradients' )
 
 		#######################
 		# Setting the session #
@@ -266,34 +270,35 @@ class DDPG() :
 
 		# Create the summaries:
 		if self.summaries :
+			with tf.name_scope( 'summaries' ) :
 
-			def param_histogram( params ) :
-				for var in params :
-					name = var.name.split( ':' )[0]
-					tf.summary.histogram( name, var )
+				def param_histogram( params ) :
+					for var in params :
+						name = var.name.split( ':' )[0]
+						tf.summary.histogram( name, var )
 
-			param_histogram( actor_params )
-			param_histogram( critic_params )
-			self.wb_summary_op = tf.summary.merge_all()
+				param_histogram( actor_params )
+				param_histogram( critic_params )
+				self.wb_summary_op = tf.summary.merge_all()
 
-			self.reward_eval = tf.placeholder( tf.float32, name='reward_eval' )
-			reward_summary = tf.summary.scalar( 'Reward', self.reward_eval )
-			self.reward_summary_op = tf.summary.merge( [ reward_summary ] )
+				self.reward_eval = tf.placeholder( tf.float32, name='reward_eval' )
+				reward_summary = tf.summary.scalar( 'Reward', self.reward_eval )
+				self.reward_summary_op = tf.summary.merge( [ reward_summary ] )
 
-			L_summary = tf.summary.scalar( 'L', self.L )
-			cg_summaries = []
-			for grad, var in critic_grads_and_vars :
-				name = 'Critic_Gradients/' + var.name.split( '/', 1 )[1].split( ':' )[0]
-				cg_summaries.append( tf.summary.scalar( name, tf.norm( grad ) ) )
-			self.critic_summary_op = tf.summary.merge( [ L_summary ] + cg_summaries )
+				L_summary = tf.summary.scalar( 'L', self.L )
+				cg_summaries = []
+				for grad, var in critic_grads_and_vars :
+					name = 'Critic_Gradients/' + var.name.split( '/', 1 )[1].split( ':' )[0]
+					cg_summaries.append( tf.summary.scalar( name, tf.norm( grad ) ) )
+				self.critic_summary_op = tf.summary.merge( [ L_summary ] + cg_summaries )
 
-			ag_summaries = []
-			for grad, var in zip( policy_gradients, actor_params ) :
-				name = 'Policy_Gradients/' + var.name.split( '/', 1 )[1].split( ':' )[0]
-				ag_summaries.append( tf.summary.scalar( name, tf.norm( grad ) ) )
-			self.actor_summary_op = tf.summary.merge( ag_summaries )
+				ag_summaries = []
+				for grad, var in zip( policy_gradients, actor_params ) :
+					name = 'Policy_Gradients/' + var.name.split( '/', 1 )[1].split( ':' )[0]
+					ag_summaries.append( tf.summary.scalar( name, tf.norm( grad ) ) )
+				self.actor_summary_op = tf.summary.merge( ag_summaries )
 
-			self.writer = tf.summary.FileWriter( summary_dir, self.sess.graph )
+				self.writer = tf.summary.FileWriter( summary_dir, self.sess.graph )
 
 	def reward_summary( self, reward ) :
 
