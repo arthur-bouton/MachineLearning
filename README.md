@@ -1,22 +1,22 @@
 # Various machine learning scripts and tools in Python
 
 
-- ***looptools.py***: Tools to monitor, extract data and have control during algorithm progress loops. It contains:
+- **[looptools.py](looptools.py)**: Tools to monitor, extract data and have control during algorithm progress loops. It contains:
 	- A context manager which allows the SIGINT signal to be processed asynchronously.
 	- A container-like class to plot variables incrementally on a persistent figure.
 	- An iterable class to extract numerical data from a file.
-- ***neural_networks.py***: Implementation of scalable Multilayer Perceptron (MLP) and Radial Basis Function network (RBF) with numpy only.
-- ***sumtree_sampler.py***: A sum tree structure to efficiently sample items according to their relative priorities.
-- ***CACLA_pendulum.py***: Implementation of the Continuous Actor Critic Learning Automaton (CACLA) [1] to balance a pendulum.
-- ***DDPG_vanilla.py***: Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [2] with TensorFlow.
-- ***DDPG_PER.py***: Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [2] with TensorFlow and enhanced with Prioritized Experience Replay (PER) [3].
-- ***PPO.py***: Multithreaded implementation of the Proximal Policy Optimization (PPO) algorithm [4] with TensorFlow.
-- ***pendulum.py***: A simple pendulum to be controlled by a torque at its hinge.
-- ***cartpole.py***: A free pendulum mounted on a cart which lateral velocity is controlled.
-- ***ddpg_pendulum.py***: Training example of the DDPG algorithm to swing up the pendulum.
-- ***ddpg_cartpole.py***: Training example of the DDPG algorithm to swing up the cart pole.
-- ***ppo_pendulum.py***: Training example of the PPO algorithm to swing up the pendulum using multithreaded workers.
-- ***ppo_cartpole.py***: Training example of the PPO algorithm to swing up the cart pole using workers running in the main thread.
+- **[neural_networks.py](neural_networks.py)**: Implementation of scalable Multilayer Perceptron (MLP) and Radial Basis Function network (RBF) with numpy only.
+- **[sumtree_sampler.py](sumtree_sampler.py)**: A sum tree structure to efficiently sample items according to their relative priorities.
+- **[CACLA_pendulum.py](CACLA_pendulum.py)**: Implementation of the Continuous Actor Critic Learning Automaton (CACLA) [1] to swing up a pendulum using only numpy.
+- **[DDPG_vanilla.py](DDPG_vanilla.py)**: Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [2] with TensorFlow.
+- **[DDPG_PER.py](DDPG_PER.py)**: Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [2] with TensorFlow and enhanced with Prioritized Experience Replay (PER) [3].
+- **[PPO.py](PPO.py)**: Multithreaded implementation of the Proximal Policy Optimization (PPO) algorithm [4] with TensorFlow.
+- **[pendulum.py](pendulum.py)**: A simple pendulum to be controlled by a torque at its hinge.
+- **[cartpole.py](cartpole.py)**: A free pendulum mounted on a cart which lateral velocity is controlled.
+- **[ddpg_pendulum.py](ddpg_pendulum.py)**: Training example of the DDPG algorithm to swing up the pendulum.
+- **[ddpg_cartpole.py](ddpg_cartpole.py)**: Training example of the DDPG algorithm to swing up the cart pole.
+- **[ppo_pendulum.py](ppo_pendulum.py)**: Training example of the PPO algorithm to swing up the pendulum using multithreaded workers.
+- **[ppo_cartpole.py](ppo_cartpole.py)**: Training example of the PPO algorithm to swing up the cart pole using workers running in the main thread.
 
 [1] Van Hasselt, Hado, and Marco A. Wiering. "Reinforcement learning in continuous action spaces."<br />
     2007 IEEE International Symposium on Approximate Dynamic Programming and Reinforcement Learning. IEEE, 2007.<br />
