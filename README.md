@@ -1,5 +1,12 @@
 # Various machine learning scripts and tools in Python
 
+![](cartpole_ppo_1.gif?raw=true "Starting from the same initial position it has been trained with") | ![](cartpole_ppo_2.gif?raw=true "Starting from a different position than the training one")
+:-:|:-:
+
+<p align="center"><i>Policy obtained by <a href="ppo_cartpole.py">ppo_cartpole.py</a> with the Proximal Policy Optimization algorithm implemented in <a href="PPO.py">PPO.py</a>.</i></p>
+
+
+## Files
 
 - **[looptools.py](looptools.py)**: Tools to monitor, extract data and have control during algorithm progress loops. It contains:
 	- A context manager which allows the SIGINT signal to be processed asynchronously.
