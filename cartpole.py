@@ -85,8 +85,8 @@ class Cartpole() :
 			r = -10
 			terminal = True
 		else :
-			r = -( self.x[0] - self.lp*sin( self.x[2] ) )**2 - ( self.lp*cos( self.x[2] ) - self.lp )**2
-			r /= self.lp
+			r = -sqrt( ( self.x[0] - self.lp*sin( self.x[2] ) )**2 + ( self.lp*cos( self.x[2] ) - self.lp )**2 )
+			r /= 2*self.lp
 			terminal = False
 		self.Rt += r
 
@@ -207,5 +207,5 @@ class Cartpole() :
 
 		if file_path is not None :
 			anim.save( file_path, writer='imagemagick' )
-
-		show()
+		else :
+			show()

@@ -57,7 +57,7 @@ session_dir = './training_data/' + script_name + '/' + data_id
 ENV = Pendulum # A class defining the environment
 EP_LEN = 100 # Number of steps for one episode
 ITER_PER_EP = 200 # Number of training iterations between each episode
-EP_MAX = 1000 # Maximal number of episodes for the training
+EP_MAX = 200 # Maximal number of episodes for the training
 EVAL_FREQ = 1 # Frequency of the policy evaluation
 
 hyper_params = {}

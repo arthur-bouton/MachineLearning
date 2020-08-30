@@ -59,7 +59,7 @@ session_dir = './training_data/' + script_name + '/' + data_id
 ENV = Cartpole # A class defining the environment
 EP_LEN = 200 # Maximum number of steps for a single episode
 EPISODES_PER_BATCH = 4
-EP_MAX = 1000 # Maximum number of episodes for the training
+EP_MAX = 500 # Maximum number of episodes for the training
 EVAL_FREQ = 1 # Frequency of the policy evaluation
 
 hyper_params = {}

@@ -58,7 +58,7 @@ ENV = Pendulum
 EP_LEN = 100 # Maximum number of steps for a single episode
 WORKERS = 4 # Number of parallel workers
 EPISODES_PER_BATCH = 4
-EP_MAX = 1000 # Maximum number of episodes for the training
+EP_MAX = 200 # Maximum number of episodes for the training
 EVAL_FREQ = 1 # Frequency of the policy evaluation
 
 hyper_params = {}
