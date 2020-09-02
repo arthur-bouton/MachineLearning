@@ -61,6 +61,9 @@ class PPO() :
 		Size of each minibatch.
 	epochs : int, optional, default: 200
 		Number of iteration at each update.
+	summary_dir : str, optional, default: None
+		Directory in which to save the summaries.
+		If None, no summaries are created.
 	seed : int, optional, default: None
 		Random seed for the initialization of random generators.
 	sess : tf.Session, optional, default: None
@@ -104,12 +107,13 @@ class PPO() :
 	def __init__( self, s_dim, a_dim, actor_def, critic_def, state_scale=None, action_scale=None,
 	              gamma=0.99, gae_lambda=0.95, epsilon=0.2, learning_rate=1e-4, vf_coeff=1, entropy_coeff=0.01,
 				  minibatch_size=64, epochs=200,
-				  seed=None, sess=None, single_thread=False ) :
+				  summary_dir=None, seed=None, sess=None, single_thread=False ) :
 
 		self.gamma = gamma
 		self.gae_lambda = gae_lambda
 		self.minibatch_size = minibatch_size
 		self.epochs = epochs
+		self.summaries = summary_dir is not None
 
 		self.n_iter = 0
 		self.n_ep = 0
@@ -207,6 +211,33 @@ class PPO() :
 		self.sess.run( tf.global_variables_initializer() )
 		self.saver = tf.train.Saver()
 
+		# Create the summaries:
+		if self.summaries :
+
+			def param_histogram( params ) :
+				for var in params :
+					name = var.name.split( ':' )[0]
+					tf.summary.histogram( name, var )
+
+			critic_params = tf.get_collection( tf.GraphKeys.TRAINABLE_VARIABLES, scope='Critic' )
+			param_histogram( pi_params )
+			param_histogram( critic_params )
+			self.wb_summary_op = tf.summary.merge_all()
+
+			self.reward_eval = tf.placeholder( tf.float32, name='reward_eval' )
+			reward_summary = tf.summary.scalar( 'Reward', self.reward_eval )
+			self.reward_summary_op = tf.summary.merge( [ reward_summary ] )
+
+			L_summary = tf.summary.scalar( 'L', self.L )
+			self.loss_summary_op = tf.summary.merge( [ L_summary ] )
+
+			self.writer = tf.summary.FileWriter( summary_dir, self.sess.graph )
+
+	def reward_summary( self, reward ) :
+
+		if self.summaries :
+			self.writer.add_summary( self.sess.run( self.reward_summary_op, {self.reward_eval: reward} ), self.n_iter )
+
 	def train( self ) :
 
 		if len( self.experience[2] ) == 0 :
@@ -222,13 +253,21 @@ class PPO() :
 
 		# Train the networks by minibatches:
 		Lt = 0
-		for _ in trange( self.epochs, desc='Training the networks', leave=False ) :
+		for epoch in trange( self.epochs, desc='Training the networks', leave=False ) :
 			indices = random.sample( range( len( r ) ), self.minibatch_size )
-			_, L = self.sess.run( [ self.train_op, self.L ], {self.states: s[indices], self.actions: a[indices], self.returns: r[indices], self.values: v[indices]} )
+			if self.summaries :
+				L, _, loss_summary = self.sess.run( [ self.L, self.train_op, self.loss_summary_op ], {self.states: s[indices], self.actions: a[indices], self.returns: r[indices], self.values: v[indices]} )
+				self.writer.add_summary( loss_summary, self.n_iter*self.epochs + epoch )
+			else :
+				L, _ = self.sess.run( [ self.L, self.train_op ], {self.states: s[indices], self.actions: a[indices], self.returns: r[indices], self.values: v[indices]} )
 			Lt += L
 
 		# Discard the experience data:
 		self.experience = [ [] for _ in range( 4 ) ]
+
+		if self.summaries and self.wb_summary_op is not None :
+			self.writer.add_summary( self.sess.run( self.wb_summary_op ), self.n_iter )
+			#self.writer.flush()
 
 		return Lt
 
@@ -240,6 +279,20 @@ class PPO() :
 			delta = rewards[t] + self.gamma*masks[t]*values[t+1] - values[t]
 			gae = delta + self.gamma*self.gae_lambda*masks[t]*gae
 			returns.insert( 0, gae + values[t] )
+
+		#T = 20
+		#N = len( rewards )
+		#deltas = []
+		#gammalambdas = [ 1 ]
+		#gl = self.gamma*self.gae_lambda
+		#for t in range( N ) :
+			#deltas.append( rewards[t] + self.gamma*masks[t]*values[t+1] - values[t] )
+			#gammalambdas.append( gl*gammalambdas[-1] )
+		#returns = []
+		#for t in range( N ) :
+			#end = min( T, t - N )
+			#returns.append( sum( [ c*d for c, d in zip( gammalambdas[0:end], deltas[t:t+end] ) ] ) )
+
 		return returns
 
 	def _worker( self, worker_id, trial_generator, episodes_per_batch=1, samples_per_batch=None ) :

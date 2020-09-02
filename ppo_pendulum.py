@@ -76,12 +76,9 @@ hyper_params['epochs'] = 200 # Number of iteration at each update
 hyper_params['epsilon'] = 0.1 # Surrogate objective clipping parameter
 hyper_params['vf_coeff'] = 1 # Critic loss coefficient in the objective function
 hyper_params['entropy_coeff'] = 0.01 # Coefficient of the entropy bonus in the objective function
+#hyper_params['summary_dir'] = '/tmp/' + script_name + '/' + data_id # Directory in which to save the summaries
 
 ppo = PPO( **hyper_params )
-
-#import tensorflow as tf
-#writer = tf.summary.FileWriter( '/tmp/' + script_name + '_graph', ppo.sess.graph )
-#exit( 0 )
 
 
 if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
@@ -145,6 +142,7 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 					print( 'It %i | Ep %i | bs %i | Lt %+8.4f | Sd %+5.2f | ' % ( ppo.n_iter, n_ep, n_samples, L, stddev_m ), end='' )
 					eval_env.print_eval()
 					sys.stdout.flush()
+					ppo.reward_summary( eval_env.get_Rt() )
 					reward_graph.add_data( n_ep, eval_env.get_Rt() )
 
 
