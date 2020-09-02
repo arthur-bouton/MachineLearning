@@ -270,35 +270,36 @@ class DDPG() :
 
 		# Create the summaries:
 		if self.summaries :
-			with tf.name_scope( 'summaries' ) :
 
-				def param_histogram( params ) :
-					for var in params :
-						name = var.name.split( ':' )[0]
-						tf.summary.histogram( name, var )
+			def param_histogram( params ) :
+				for var in params :
+					name = var.name.split( ':' )[0]
+					tf.summary.histogram( name, var )
 
-				param_histogram( actor_params )
-				param_histogram( critic_params )
-				self.wb_summary_op = tf.summary.merge_all()
+			param_histogram( actor_params )
+			param_histogram( critic_params )
+			self.wb_summary_op = tf.summary.merge_all()
 
-				self.reward_eval = tf.placeholder( tf.float32, name='reward_eval' )
-				reward_summary = tf.summary.scalar( 'Reward', self.reward_eval )
-				self.reward_summary_op = tf.summary.merge( [ reward_summary ] )
+			self.reward_eval = tf.placeholder( tf.float32, name='reward_eval' )
+			reward_summary = tf.summary.scalar( 'Reward', self.reward_eval )
+			self.reward_summary_op = tf.summary.merge( [ reward_summary ] )
 
-				L_summary = tf.summary.scalar( 'L', self.L )
-				cg_summaries = []
+			L_summary = tf.summary.scalar( 'L', self.L )
+			cg_summaries = []
+			with tf.name_scope( 'critic_gradient_norms' ) :
 				for grad, var in critic_grads_and_vars :
-					name = 'Critic_Gradients/' + var.name.split( '/', 1 )[1].split( ':' )[0]
+					name = 'Critic_Gradient/' + var.name.split( '/', 1 )[1].split( ':' )[0]
 					cg_summaries.append( tf.summary.scalar( name, tf.norm( grad ) ) )
-				self.critic_summary_op = tf.summary.merge( [ L_summary ] + cg_summaries )
+			self.critic_summary_op = tf.summary.merge( [ L_summary ] + cg_summaries )
 
-				ag_summaries = []
+			ag_summaries = []
+			with tf.name_scope( 'policy_gradient_norms' ) :
 				for grad, var in zip( policy_gradients, actor_params ) :
-					name = 'Policy_Gradients/' + var.name.split( '/', 1 )[1].split( ':' )[0]
+					name = 'Policy_Gradient/' + var.name.split( '/', 1 )[1].split( ':' )[0]
 					ag_summaries.append( tf.summary.scalar( name, tf.norm( grad ) ) )
-				self.actor_summary_op = tf.summary.merge( ag_summaries )
+			self.actor_summary_op = tf.summary.merge( ag_summaries )
 
-				self.writer = tf.summary.FileWriter( summary_dir, self.sess.graph )
+			self.writer = tf.summary.FileWriter( summary_dir, self.sess.graph )
 
 	def reward_summary( self, reward ) :
 
