@@ -102,6 +102,8 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 			
 			yield s, a, r, ep_done, s_next
 
+			if ep_done : break
+
 			s = s_next
 
 
@@ -137,7 +139,8 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 					for t in range( EP_LEN ) :
 						a, stddev = ppo.best_action( eval_env.get_obs(), return_stddev=True )
 						stddev_m += stddev
-						eval_env.step( a )
+						_, _, ep_done, _ = eval_env.step( a )
+						if ep_done : break
 					stddev_m /= EP_LEN
 					print( 'It %i | Ep %i | bs %i | Lt %+8.4f | Sd %+5.2f | ' % ( ppo.n_iter, n_ep, n_samples, L, stddev_m ), end='' )
 					eval_env.print_eval()
@@ -174,8 +177,9 @@ else :
 	test_env = ENV( 180, store_data=True, include_stddev=True )
 	for t in range( EP_LEN ) :
 		a, stddev = ppo.best_action( test_env.get_obs(), return_stddev=True )
-		test_env.step( a, stddev )
-		#test_env.step( ppo.stoch_action( test_env.get_obs() ) )
+		_, _, ep_done, _ = test_env.step( a, stddev )
+		#_, _, ep_done, _ = test_env.step( ppo.stoch_action( test_env.get_obs() ) )
+		if ep_done : break
 	print( 'Trial result: ', end='' )
 	test_env.print_eval()
 	test_env.plot3D( ppo.best_action, ppo.get_value, include_stddev=True )

@@ -316,18 +316,18 @@ class PPO() :
 					if len( transitions ) == 5 and not isinstance( transitions[2], collections.Iterable ) :
 						transitions = [ transitions ]
 
-					for s, a, r, ep_done, s_next in transitions :
+					for s, a, r, terminal, s_next in transitions :
 
 						# Store the data for the episode:
 						states.append( s )
 						actions.append( a )
 						rewards.append( r )
 						values.append( self.get_value( s ) )
-						masks.append( int( not ep_done ) )
+						masks.append( int( not terminal ) )
 
 						self.samp_count += 1
 
-					if samples_per_batch is not None and self.samp_count >= samples_per_batch or ep_done :
+					if samples_per_batch is not None and self.samp_count >= samples_per_batch or terminal :
 						break
 
 				# Compute the generalized advantage estimation for the episode:
@@ -435,14 +435,14 @@ class PPO() :
 		if len( transitions ) == 5 and not isinstance( transitions[2], collections.Iterable ) :
 			transitions = [ transitions ]
 
-		for s, a, r, ep_done, self.ep_buf['s_next'] in transitions :
+		for s, a, r, terminal, self.ep_buf['s_next'] in transitions :
 
 			# Store the data for the episode:
 			self.ep_buf['s'].append( s )
 			self.ep_buf['a'].append( a )
 			self.ep_buf['r'].append( r )
 			self.ep_buf['v'].append( self.get_value( s ) )
-			self.ep_buf['m'].append( int( not ep_done ) )
+			self.ep_buf['m'].append( int( not terminal ) )
 
 	def process_episode( self ) :
 

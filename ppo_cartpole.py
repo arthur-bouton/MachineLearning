@@ -121,6 +121,8 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 					ppo.add_transitions(( s, a, r, ep_done, s_next ))
 					n_samples += 1
 
+					if ep_done : break
+
 					s = s_next
 
 				ppo.process_episode()
@@ -140,7 +142,8 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 				for t in range( EP_LEN ) :
 					a, stddev = ppo.best_action( eval_env.get_obs(), return_stddev=True )
 					stddev_m += stddev
-					eval_env.step( a )
+					_, _, ep_done, _ = eval_env.step( a )
+					if ep_done : break
 				stddev_m /= EP_LEN
 				print( 'It %i | Ep %i | bs %i | Lt %+8.4f | Sd %+5.2f | ' % ( ppo.n_iter, n_ep, n_samples, L, stddev_m ), end='' )
 				eval_env.print_eval()
@@ -177,7 +180,8 @@ else :
 	test_env = ENV( ( 0, 180 ), store_data=True, include_stddev=True )
 	for t in range( EP_LEN ) :
 		a, stddev = ppo.best_action( test_env.get_obs(), return_stddev=True )
-		test_env.step( a, stddev )
+		_, _, ep_done, _ = test_env.step( a, stddev )
+		if ep_done : break
 	print( 'Trial result: ', end='' )
 	test_env.print_eval()
 	test_env.plot_trial( plot_stddev=True )

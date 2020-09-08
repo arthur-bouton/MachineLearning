@@ -126,15 +126,15 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 					a = ddpg.get_action( s )
 
 				# Do one step:
-				s2, r, terminal, _ = training_env.step( a )
+				s2, r, ep_done, _ = training_env.step( a )
 
 				# Scale the reward:
 				#r = r/10
 
 				# Store the experience in the replay buffer:
-				ddpg.replay_buffer.append(( s, a, r, terminal, s2 ))
+				ddpg.replay_buffer.append(( s, a, r, ep_done, s2 ))
 				
-				if terminal or interruption() :
+				if ep_done or interruption() :
 					break
 
 				s = s2
@@ -153,8 +153,8 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 			if L != 0 and n_ep % EVAL_FREQ == 0 :
 				s = eval_env.reset( store_data=True )
 				for t in range( EP_LEN ) :
-					s, _, done, _ = eval_env.step( ddpg.get_action( s ) )
-					if done : break
+					s, _, ep_done, _ = eval_env.step( ddpg.get_action( s ) )
+					if ep_done : break
 				print( 'It %i | Ep %i | L %+8.4f | ' % ( ddpg.n_iter, n_ep, L ), end='' )
 				eval_env.print_eval()
 				sys.stdout.flush()
@@ -197,8 +197,8 @@ else :
 	test_env = ENV( 180, store_data=True )
 	s = test_env.get_obs()
 	for t in range( EP_LEN ) :
-		s, _, done, _ = test_env.step( ddpg.get_action( s ) )
-		if done : break
+		s, _, ep_done, _ = test_env.step( ddpg.get_action( s ) )
+		if ep_done : break
 	print( 'Trial result: ', end='' )
 	test_env.print_eval()
 	test_env.plot3D( ddpg.get_action, ddpg.get_V_value )

@@ -309,7 +309,7 @@ class DDPG() :
 			self.n_iter += 1
 
 			# Randomly pick samples in the replay buffer:
-			s, a, r, t, s2 = self.sample_batch( self.minibatch_size )
+			s, a, r, terminal, s2 = self.sample_batch( self.minibatch_size )
 
 			# Predict the future discounted rewards with the target critic network:
 			target_q = self.sess.run( self.target_Q_value, {self.states: s2} )
@@ -317,7 +317,7 @@ class DDPG() :
 			# Compute the targets for the Q-value:
 			y = []
 			for i in range( self.minibatch_size ) :
-				if t[i] :
+				if terminal[i] :
 					y.append( np.array([ r[i] ]) )
 				else :
 					y.append( r[i] + self.gamma*target_q[i] )
