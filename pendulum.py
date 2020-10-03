@@ -44,14 +44,12 @@ class Pendulum() :
 		self.x0 = array([ initial_angle*pi/180, 0*pi/180 ])
 		self.t = 0.
 		self.x = array( self.x0 )
-		self.diff = 0.
 		self.Rt = 0.
 
 		if store_data :
 			self.t_data = [ self.t ]
 			self.u_data = []
 			self.x_data = [ self.x*180/pi ]
-			self.theta_abs = [ self.x[0] ]
 			if include_stddev :
 				self.u_stddev_data = []
 
@@ -67,9 +65,6 @@ class Pendulum() :
 		self.x = odeint( self.model, self.x, [ self.t, self.t+self.timestep ], (u,), self.d_model )[-1]
 		#self.x = odeint( self.model, self.x, [ self.t, self.t+self.timestep ], (u,) )[-1]
 		#self.x = self.x + self.timestep*array( self.model( self.x, self.t, u ) )
-		x_int = self.x[0]
-		self.x[0] = ( self.x[0] + pi )%( 2*pi ) - pi
-		self.diff += x_int - self.x[0]
 		self.t += self.timestep
 
 		# Reward :
@@ -81,22 +76,21 @@ class Pendulum() :
 			self.t_data.append( self.t )
 			self.u_data.append( u )
 			self.x_data.append( self.x*180/pi )
-			self.theta_abs.append( self.diff + self.x[0] )
 			if self.include_stddev :
 				self.u_stddev_data.append( stddev )
 
 		return self.get_obs(), r, False, None
-		#done = True if abs( self.diff + self.x[0] - pi ) > 3/4*pi else False
+		#done = True if abs( self.x[0] - pi ) > 3/4*pi else False
 		#if done : r = -10
 		#return self.x, r, done, None
 	
 	def get_obs( self ) :
 		if self.absolute_angle :
-			x = array( self.x )
-			x[2] = self.diff + self.x[2]
-			return x
-		else :
 			return self.x
+		else :
+			x = array( self.x )
+			x[0] = pi - ( pi - x[0] )%( 2*pi )
+			return x
 	
 	def get_Rt( self ) :
 		return self.Rt/( self.t/self.timestep + 1 )
@@ -106,10 +100,10 @@ class Pendulum() :
 		Rt = self.Rt/( self.t/self.timestep + 1 )
 
 		if self.store_data :
-			success_rate = sum( [ ( 1. if abs( a[0] ) < 10 else 0. ) for a in self.x_data ] )/len( self.x_data )*100
-			print( 'tf %4.1f | Rt %+7.4f | Success rate %5.1f %% | Nr %+3d' % ( self.t, Rt, success_rate, ( self.diff - self.x0[0] )/( 2* pi ) ) )
+			success_rate = sum( [ ( 1. if abs( 180 - ( 180 - x[0] )%( 360 ) ) < 10 else 0. ) for x in self.x_data ] )/len( self.x_data )*100
+			print( 'tf %4.1f | Rt %+7.4f | Success rate %5.1f %% | Nr %+3d' % ( self.t, Rt, success_rate, int( ( self.x[0] - self.x0[0] )/( 2*pi ) ) ) )
 		else :
-			print( 'tf %4.1f | Rt %+7.4f | Nr %+3d' % ( self.t, Rt, ( self.diff - self.x0[0] )/( 2* pi ) ) )
+			print( 'tf %4.1f | Rt %+7.4f | Nr %+3d' % ( self.t, Rt, int( ( self.x[0] - self.x0[0] )/( 2*pi ) ) ) )
 	
 	def plot_trial( self, title=None, plot_stddev=True ) :
 
@@ -126,8 +120,7 @@ class Pendulum() :
 		ax[0].set_ylim( [ -self.umax, self.umax ] )
 		ax[0].grid( True )
 		ax[1].set_ylabel( u'$\\theta$' )
-		ax[1].plot( self.t_data, [ x*180/pi for x in self.theta_abs ] )
-		#ax[1].plot( t_data, [ x[0] for x in self.x_data ] )
+		ax[1].plot( self.t_data, [ x[0] for x in self.x_data ] )
 		#ax[1].set_ylim( [ -180, 180 ] )
 		ax[1].grid( True )
 		ax[2].set_ylabel( u'$\omega$' )
@@ -181,7 +174,7 @@ class Pendulum() :
 			ax.view_init( elev, azim )
 
 			if self.store_data :
-				ax.scatter( [ x[0] for x in self.x_data ], [ x[1] for x in self.x_data ], zc, c='r', marker='o', alpha=1 )
+				ax.scatter( [ 180 - ( 180 - x[0] )%( 360 ) for x in self.x_data ], [ x[1] for x in self.x_data ], zc, c='r', marker='o', alpha=1 )
 
 		if include_stddev :
 			fig = figure( 'Actor variance' )

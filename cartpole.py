@@ -66,14 +66,12 @@ class Cartpole() :
 		self.x0 = array([ initial_pos[0], 0, initial_pos[1]*pi/180, 0*pi/180 ])
 		self.t = 0.
 		self.x = array( self.x0 )
-		self.diff = 0.
 		self.Rt = 0.
 
 		if store_data :
 			self.t_data = [ self.t ]
 			self.v_data = []
 			self.x_data = [ self.x ]
-			self.theta_abs = [ self.x[2] ]
 			if include_stddev :
 				self.v_stddev_data = []
 
@@ -86,9 +84,6 @@ class Cartpole() :
 
 		self.x = odeint( self.model, self.x, [ self.t, self.t+self.timestep ], (u,) )[-1]
 		#self.x = self.x + self.timestep*array( self.model( self.x, self.t, u ) )
-		x_int = self.x[2]
-		self.x[2] = ( self.x[2] + pi )%( 2*pi ) - pi
-		self.diff += x_int - self.x[2]
 		self.t += self.timestep
 
 		# Reward :
@@ -105,7 +100,6 @@ class Cartpole() :
 			self.t_data.append( self.t )
 			self.v_data.append( u )
 			self.x_data.append( self.x )
-			self.theta_abs.append( self.diff + self.x[2] )
 			if self.include_stddev :
 				self.v_stddev_data.append( stddev )
 
@@ -113,11 +107,11 @@ class Cartpole() :
 	
 	def get_obs( self ) :
 		if self.absolute_angle :
-			x = array( self.x )
-			x[2] = self.diff + self.x[2]
-			return x
-		else :
 			return self.x
+		else :
+			x = array( self.x )
+			x[2] = pi - ( pi - x[2] )%( 2*pi )
+			return x
 	
 	def get_Rt( self ) :
 		return self.Rt/( self.t/self.timestep + 1 )
@@ -129,9 +123,9 @@ class Cartpole() :
 		if self.store_data :
 			success_rate = sum( [ ( 1. if sqrt( ( x[0] - self.lp*sin( x[2] ) )**2 + ( self.lp*cos( x[2] ) - self.lp )**2 ) < self.lp/2 else 0. )
 			                      for x in self.x_data ] )/len( self.x_data )*100
-			print( 'tf %4.1f | Rt %+7.4f | Success rate %5.1f %% | Nr %+3d' % ( self.t, Rt, success_rate, ( self.diff - self.x0[2] )/( 2* pi ) ) )
+			print( 'tf %4.1f | Rt %+7.4f | Success rate %5.1f %% | Nr %+3d' % ( self.t, Rt, success_rate, int( ( self.x[2] - self.x0[2] )/( 2*pi ) ) ) )
 		else :
-			print( 'tf %4.1f | Rt %+7.4f | Nr %+3d' % ( self.t, Rt, ( self.diff - self.x0[0] )/( 2* pi ) ) )
+			print( 'tf %4.1f | Rt %+7.4f | Nr %+3d' % ( self.t, Rt, int( ( self.x[2] - self.x0[2] )/( 2*pi ) ) ) )
 
 	def plot_trial( self, title=None, plot_stddev=True ) :
 
@@ -157,8 +151,7 @@ class Cartpole() :
 		ax[1].plot( self.t_data, [ x[0] for x in self.x_data ] )
 		ax[1].grid( True )
 		ax[2].set_ylabel( u'$\\theta$' )
-		ax[2].plot( self.t_data, [ x*180/pi for x in self.theta_abs ] )
-		#ax[2].plot( self.t_data, [ x[2] for x in self.x_data ] )
+		ax[2].plot( self.t_data, [ x[2]*180/pi for x in self.x_data ] )
 		#ax[2].set_ylim( [ -180, 180 ] )
 		ax[2].grid( True )
 		ax[3].set_ylabel( u'$\omega$' )
