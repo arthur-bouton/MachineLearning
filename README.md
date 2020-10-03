@@ -19,7 +19,7 @@
 - **[DDPG_PER.py](DDPG_PER.py)**: Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [2] with TensorFlow and enhanced with Prioritized Experience Replay (PER) [3].
 - **[PPO.py](PPO.py)**: Multithreaded implementation of the Proximal Policy Optimization (PPO) algorithm [4] with TensorFlow.
 - **[pendulum.py](pendulum.py)**: A simple pendulum to be controlled by a torque at its hinge.
-- **[cartpole.py](cartpole.py)**: A free pendulum mounted on a cart which lateral velocity is controlled.
+- **[cartpole.py](cartpole.py)**: A free pendulum mounted on a cart which can be controlled either via its lateral speed by means of an embedded feedback controller or by the lateral force applied to it.
 - **[ddpg_pendulum.py](ddpg_pendulum.py)**: Training example of the DDPG algorithm to swing up the pendulum.
 - **[ddpg_cartpole.py](ddpg_cartpole.py)**: Training example of the DDPG algorithm to swing up the cart pole.
 - **[ppo_pendulum.py](ppo_pendulum.py)**: Training example of the PPO algorithm to swing up the pendulum using multithreaded workers.

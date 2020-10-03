@@ -16,7 +16,7 @@ class Cartpole() :
 	s_dim = 4
 	a_dim = 1
 
-	def __init__( self, initial_pos=( 0, 180 ), store_data=False, include_stddev=False ) :
+	def __init__( self, initial_pos=( 0, 180 ), store_data=False, include_stddev=False, control='speed', angle='relative' ) :
 		self.mp = 0.1 #kg
 		self.mc = 0.1 #kg
 		self.lp = 0.3 #m
@@ -28,11 +28,22 @@ class Cartpole() :
 		self.vmax = 1. #m/s
 		self.timestep = 0.05 #s
 
+		self.force_control = False
+		if control == 'force' :
+			self.force_control = True
+
+		self.absolute_angle = False
+		if angle == 'absolute' :
+			self.absolute_angle = True
+
 		self.reset( initial_pos, store_data, include_stddev )
 	
-	def model( self, x, t, vd ) :
+	def model( self, x, t, u ) :
 
-		f = self.cart_controller( vd, x[1] ) - self.kc*x[1]
+		if self.force_control :
+			f = clip( u, -self.fmax, self.fmax )
+		else :
+			f = self.cart_controller( u, x[1] ) - self.kc*x[1]
 		tau = -self.kp*x[3]
 
 		costheta = cos( x[2] - pi )
@@ -71,10 +82,10 @@ class Cartpole() :
 
 		return self.get_obs()
 
-	def step( self, v, stddev=0 ) :
+	def step( self, u, stddev=0 ) :
 
-		self.x = odeint( self.model, self.x, [ self.t, self.t+self.timestep ], (v,) )[-1]
-		#self.x = self.x + self.timestep*array( self.model( self.x, self.t, v ) )
+		self.x = odeint( self.model, self.x, [ self.t, self.t+self.timestep ], (u,) )[-1]
+		#self.x = self.x + self.timestep*array( self.model( self.x, self.t, u ) )
 		x_int = self.x[2]
 		self.x[2] = ( self.x[2] + pi )%( 2*pi ) - pi
 		self.diff += x_int - self.x[2]
@@ -92,7 +103,7 @@ class Cartpole() :
 
 		if self.store_data :
 			self.t_data.append( self.t )
-			self.v_data.append( v )
+			self.v_data.append( u )
 			self.x_data.append( self.x )
 			self.theta_abs.append( self.diff + self.x[2] )
 			if self.include_stddev :
@@ -101,7 +112,12 @@ class Cartpole() :
 		return self.get_obs(), r, terminal, None
 	
 	def get_obs( self ) :
-		return self.x
+		if self.absolute_angle :
+			x = array( self.x )
+			x[2] = self.diff + self.x[2]
+			return x
+		else :
+			return self.x
 	
 	def get_Rt( self ) :
 		return self.Rt/( self.t/self.timestep + 1 )
@@ -124,14 +140,18 @@ class Cartpole() :
 
 		fig, ax = subplots( 4, sharex=True )
 		fig.canvas.set_window_title( ( title if title is not None else 'Cartpole trial' ) + ' (state)' )
-		ax[0].set_ylabel( u'$v$' )
+		ax[0].set_ylabel( u'$u$' )
 		ax[0].plot( self.t_data[1:], self.v_data, 'r' )
 		ax[0].plot( self.t_data, [ x[1] for x in self.x_data ] )
-		ax[0].legend( [ u'$v_d$', u'$\dot{x}$' ] )
+		if self.force_control :
+			ax[0].legend( [ u'$f$', u'$\dot{x}$' ] )
+		else :
+			ax[0].legend( [ u'$v_d$', u'$\dot{x}$' ] )
 		if self.include_stddev and plot_stddev :
 			ax[0].plot( self.t_data[1:], array( self.v_data ) + array( self.v_stddev_data )/2, 'c--' )
 			ax[0].plot( self.t_data[1:], array( self.v_data ) - array( self.v_stddev_data )/2, 'y--' )
-		ax[0].set_ylim( [ -self.vmax, self.vmax ] )
+		if not self.force_control :
+			ax[0].set_ylim( [ -self.vmax, self.vmax ] )
 		ax[0].grid( True )
 		ax[1].set_ylabel( u'$x$' )
 		ax[1].plot( self.t_data, [ x[0] for x in self.x_data ] )
@@ -150,10 +170,13 @@ class Cartpole() :
 	def show( self ) :
 		show()
 	
-	def animate( self, file_path=None ) :
+	def animate( self, file_path=None, title=None ) :
 
 		if not self.store_data :
 			return
+
+		# Ensure that the interactive mode is off:
+		ioff()
 
 		from matplotlib.animation import FuncAnimation
 
@@ -173,7 +196,7 @@ class Cartpole() :
 		x_margin = lp
 		y_margin = 0.2
 
-		fig = figure( 'Cartpole trial', figsize=( 10, 4.5 ) )
+		fig = figure( ( title if title is not None else 'Cartpole trial' ) + ' (animation)', figsize=( 10, 4.5 ) )
 		ax = fig.add_subplot( 1, 1, 1, aspect='equal' )
 		ax.plot( [ -lc, lc ], [ 0, 0 ], color=track_color )
 		ax.plot( [ 0, 0 ], [ -lp*2, lp*2 ], color=target_color )

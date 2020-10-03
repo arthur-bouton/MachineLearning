@@ -16,7 +16,7 @@ class Pendulum() :
 	s_dim = 2
 	a_dim = 1
 
-	def __init__( self, initial_angle=180, store_data=False, include_stddev=False ) :
+	def __init__( self, initial_angle=180, store_data=False, include_stddev=False, angle='relative' ) :
 		#self.m = 0.5 #kg
 		self.m = 1 #kg
 		self.l = 0.3 #m
@@ -24,6 +24,10 @@ class Pendulum() :
 		self.g = 9.81 #N/kg
 		self.umax = 1 #N.m
 		self.timestep = 0.1 #s
+
+		self.absolute_angle = False
+		if angle == 'absolute' :
+			self.absolute_angle = True
 
 		self.reset( initial_angle, store_data, include_stddev )
 	
@@ -87,7 +91,12 @@ class Pendulum() :
 		#return self.x, r, done, None
 	
 	def get_obs( self ) :
-		return self.x
+		if self.absolute_angle :
+			x = array( self.x )
+			x[2] = self.diff + self.x[2]
+			return x
+		else :
+			return self.x
 	
 	def get_Rt( self ) :
 		return self.Rt/( self.t/self.timestep + 1 )
@@ -114,7 +123,7 @@ class Pendulum() :
 		if self.include_stddev and plot_stddev :
 			ax[0].plot( self.t_data[:-1], array( self.u_data ) + array( self.u_stddev_data )/2, '--' )
 			ax[0].plot( self.t_data[:-1], array( self.u_data ) - array( self.u_stddev_data )/2, '--' )
-		ax[0].set_ylim( [ -1, 1 ] )
+		ax[0].set_ylim( [ -self.umax, self.umax ] )
 		ax[0].grid( True )
 		ax[1].set_ylabel( u'$\\theta$' )
 		ax[1].plot( self.t_data, [ x*180/pi for x in self.theta_abs ] )
