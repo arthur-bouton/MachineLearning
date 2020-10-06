@@ -133,7 +133,7 @@ class Cartpole() :
 			return
 
 		fig, ax = subplots( 4, sharex=True )
-		fig.canvas.set_window_title( ( title if title is not None else 'Cartpole trial' ) + ' (state)' )
+		fig.canvas.set_window_title( title if title is not None else 'Cartpole trial (state)' )
 		ax[0].set_ylabel( u'$u$' )
 		ax[0].plot( self.t_data[1:], self.v_data, 'r' )
 		ax[0].plot( self.t_data, [ x[1] for x in self.x_data ] )
@@ -189,7 +189,7 @@ class Cartpole() :
 		x_margin = lp
 		y_margin = 0.2
 
-		fig = figure( ( title if title is not None else 'Cartpole trial' ) + ' (animation)', figsize=( 10, 4.5 ) )
+		fig = figure( title if title is not None else 'Cartpole trial (animation)', figsize=( 10, 4.5 ) )
 		ax = fig.add_subplot( 1, 1, 1, aspect='equal' )
 		ax.plot( [ -lc, lc ], [ 0, 0 ], color=track_color )
 		ax.plot( [ 0, 0 ], [ -lp*2, lp*2 ], color=target_color )

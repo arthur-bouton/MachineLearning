@@ -1,5 +1,5 @@
 """
-Multithreaded implementation of the Proximal Policy Optimization (PPO) algorithm [1] with TensorFlow.
+Multithreaded implementation of the Proximal Policy Optimization (PPO) algorithm [1] with TensorFlow for continuous-state and continuous-action spaces.
 
 Distribute workers to parallel threads in order to speed up the collection of data from the current policy at each step.
 

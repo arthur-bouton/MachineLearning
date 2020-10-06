@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Train a cartpole with the Proximal Policy Optimization (PPO) algorithm and workers running in the main thread.
+Train a cart-pole with the Proximal Policy Optimization (PPO) algorithm and workers running in the main thread.
 
 Start a new training by calling this script without argument.
 When the algorithm has converged, send SIGINT to stop it and save the model by answering "y" when prompted to.

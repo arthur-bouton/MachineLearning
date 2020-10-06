@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """ 
-Train a cartpole with the Deep Deterministic Policy Gradient (DDPG) algorithm.
+Train a cart-pole with the Deep Deterministic Policy Gradient (DDPG) algorithm.
 
 Start a new training by calling this script without argument.
 When the algorithm has converged, send SIGINT to stop it and save the model and the content of the replay buffer by answering "y" when prompted to.

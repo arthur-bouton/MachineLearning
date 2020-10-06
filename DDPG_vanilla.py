@@ -1,5 +1,5 @@
 """ 
-Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [1] with TensorFlow.
+Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [1] with TensorFlow for continuous-state and continuous-action spaces.
 
 [1] Lillicrap, Timothy P., et al. "Continuous control with deep reinforcement learning." arXiv preprint arXiv:1509.02971 (2015).
 
