@@ -21,9 +21,11 @@
 - **[pendulum.py](pendulum.py)**: A simple pendulum to be controlled by a torque at its hinge.
 - **[cartpole.py](cartpole.py)**: A free pendulum mounted on a cart which can be controlled either via its lateral speed by means of an embedded feedback controller or by the lateral force applied to it.
 - **[ddpg_pendulum.py](ddpg_pendulum.py)**: Training example of the DDPG algorithm to swing up the pendulum.
-- **[ddpg_cartpole.py](ddpg_cartpole.py)**: Training example of the DDPG algorithm to swing up the cart pole.
+- **[ddpg_cartpole.py](ddpg_cartpole.py)**: Training example of the DDPG algorithm to swing up the cart-pole.
 - **[ppo_pendulum.py](ppo_pendulum.py)**: Training example of the PPO algorithm to swing up the pendulum using multithreaded workers.
-- **[ppo_cartpole.py](ppo_cartpole.py)**: Training example of the PPO algorithm to swing up the cart pole using workers running in the main thread.
+- **[ppo_cartpole.py](ppo_cartpole.py)**: Training example of the PPO algorithm to swing up the cart-pole using workers running in the main thread.
+- **[LQR.py](LQR.py)**: Linear-Quadratic Regulators for finite or infinite horizons and continuous or discrete times.
+- **[lm_slsqp_cartpole.py](lm_slsqp_cartpole.py)**: Automated control synthesis to swing up a cart-pole for which the physical parameters are unknown. The parameter identification is performed by a non-linear regression, the trajectory planning is based on a direct collocation method using non-linear programming and the trajectory tracking is ensured by LQR control.
 
 [1] Van Hasselt, Hado, and Marco A. Wiering. "Reinforcement learning in continuous action spaces."<br />
     2007 IEEE International Symposium on Approximate Dynamic Programming and Reinforcement Learning. IEEE, 2007.<br />
