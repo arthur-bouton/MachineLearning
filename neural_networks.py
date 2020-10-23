@@ -145,7 +145,7 @@ class MLP :
 
 	def batch_training( self, data_inputs, data_targets ) :
 
-		if len( data_inputs ) > 0 :
+		if data_inputs :
 
 			# Computation of the avarage updates:
 			dW_total, dB_total = self._backprop( data_inputs[0], data_targets[0] )
@@ -307,7 +307,7 @@ class RBF :
 
 	def batch_training( self, data_inputs, data_targets ) :
 
-		if len( data_inputs ) > 0 :
+		if data_inputs :
 
 			# Computation of the avarage updates:
 			dW_total = self._compute_updates( data_inputs[0], data_targets[0] )

@@ -528,7 +528,7 @@ class Datafile :
 							continue
 						self._columns.append( i )
 
-					if len( self._columns ) > 0 :
+					if self._columns :
 						break
 
 					line = self._next_line( file )
