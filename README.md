@@ -26,6 +26,7 @@
 - **[ppo_cartpole.py](ppo_cartpole.py)**: Training example of the PPO algorithm to swing up the cart-pole using workers running in the main thread.
 - **[LQR.py](LQR.py)**: Linear-Quadratic Regulators for finite or infinite horizons and continuous or discrete times.
 - **[lm_slsqp_cartpole.py](lm_slsqp_cartpole.py)**: Automated control synthesis to swing up a cart-pole for which the physical parameters are unknown. The parameter identification is performed by a non-linear regression, the trajectory planning is based on a direct collocation method using non-linear programming and the trajectory tracking is ensured by LQR control.
+- **[quadratures.py](quadratures.py)**: Contains a class providing Gauss-Lobatto quadratures and barycentric Lagrange interpolation.
 
 [1] Van Hasselt, Hado, and Marco A. Wiering. "Reinforcement learning in continuous action spaces."<br />
     2007 IEEE International Symposium on Approximate Dynamic Programming and Reinforcement Learning. IEEE, 2007.<br />
