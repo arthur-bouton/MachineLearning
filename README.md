@@ -15,15 +15,17 @@
 - **[neural_networks.py](neural_networks.py)**: Implementation of scalable Multilayer Perceptron (MLP) and Radial Basis Function network (RBF) with numpy only.
 - **[sumtree_sampler.py](sumtree_sampler.py)**: A sum tree structure to efficiently sample items according to their relative priorities.
 - **[CACLA_pendulum.py](CACLA_pendulum.py)**: Implementation of the Continuous Actor Critic Learning Automaton (CACLA) [1] to swing up a pendulum using only numpy.
-- **[DDPG_vanilla.py](DDPG_vanilla.py)**: Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [2] with TensorFlow.
-- **[DDPG_PER.py](DDPG_PER.py)**: Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [2] with TensorFlow and enhanced with Prioritized Experience Replay (PER) [3].
-- **[PPO.py](PPO.py)**: Multithreaded implementation of the Proximal Policy Optimization (PPO) algorithm [4] with TensorFlow.
+- **[DDPG_vanilla.py](DDPG_vanilla.py)**: Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [2] with TensorFlow 1.
+- **[DDPG_PER.py](DDPG_PER.py)**: Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [2] with TensorFlow 1 and enhanced with Prioritized Experience Replay (PER) [3].
+- **[PPO.py](PPO.py)**: Multithreaded implementation of the Proximal Policy Optimization (PPO) algorithm [4] with TensorFlow 1.
+- **[SAC.py](SAC.py)**: Implementation of the Soft Actor-Critic (SAC) algorithm with automated entropy temperature adjustment [5] with TensorFlow 2.
 - **[pendulum.py](pendulum.py)**: A simple pendulum to be controlled by a torque at its hinge.
 - **[cartpole.py](cartpole.py)**: A free pendulum mounted on a cart which can be controlled either via its lateral speed by means of an embedded feedback controller or by the lateral force applied to it.
 - **[ddpg_pendulum.py](ddpg_pendulum.py)**: Training example of the DDPG algorithm to swing up the pendulum.
 - **[ddpg_cartpole.py](ddpg_cartpole.py)**: Training example of the DDPG algorithm to swing up the cart-pole.
 - **[ppo_pendulum.py](ppo_pendulum.py)**: Training example of the PPO algorithm to swing up the pendulum using multithreaded workers.
 - **[ppo_cartpole.py](ppo_cartpole.py)**: Training example of the PPO algorithm to swing up the cart-pole using workers running in the main thread.
+- **[sac_pendulum.py](sac_pendulum.py)**: Training example of the SAC algorithm to swing up the pendulum.
 - **[LQR.py](LQR.py)**: Linear-Quadratic Regulators for finite or infinite horizons and continuous or discrete times.
 - **[lm_slsqp_cartpole.py](lm_slsqp_cartpole.py)**: Automated control synthesis to swing up a cart-pole for which the physical parameters are unknown. The parameter identification is performed by a non-linear regression, the trajectory planning is based on a direct collocation method using non-linear programming and the trajectory tracking is ensured by LQR control.
 - **[quadratures.py](quadratures.py)**: Contains a class providing Gauss-Lobatto quadratures and barycentric Lagrange interpolation.
@@ -32,7 +34,8 @@
     2007 IEEE International Symposium on Approximate Dynamic Programming and Reinforcement Learning. IEEE, 2007.<br />
 [2] Lillicrap, Timothy P., et al. "Continuous control with deep reinforcement learning." arXiv preprint arXiv:1509.02971 (2015).<br />
 [3] Schaul, Tom, et al. "Prioritized experience replay." arXiv preprint arXiv:1511.05952 (2015).<br />
-[4] Schulman, John, et al. "Proximal policy optimization algorithms." arXiv preprint arXiv:1707.06347 (2017).
+[4] Schulman, John, et al. "Proximal policy optimization algorithms." arXiv preprint arXiv:1707.06347 (2017).<br />
+[5] Haarnoja, Tuomas, et al. "Soft actor-critic algorithms and applications." arXiv preprint arXiv:1812.05905 (2018).
 
 <br />
 <br />
