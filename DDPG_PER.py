@@ -312,8 +312,8 @@ class DDPG() :
 
 		s_batch = np.array( [ _[0] for _ in experiences ] )
 		a_batch = np.array( [ _[1] if np.shape( _[1] ) else [ _[1] ] for _ in experiences ] )
-		r_batch = np.array( [ _[2] for _ in experiences ] )
-		t_batch = np.array( [ _[3] for _ in experiences ] )
+		r_batch = np.array( [ [ _[2] ] for _ in experiences ] )
+		t_batch = np.array( [ [ _[3] ] for _ in experiences ] )
 		s2_batch = np.array( [ _[4] for _ in experiences ] )
 
 		return s_batch, a_batch, r_batch, t_batch, s2_batch, indices, np.array( priorities ).reshape( -1, 1 )
@@ -336,12 +336,7 @@ class DDPG() :
 			target_q = self.sess.run( self.target_Q_value, {self.states: s2} )
 
 			# Compute the targets for the Q-value:
-			y = []
-			for i in range( self.minibatch_size ) :
-				if terminal[i] :
-					y.append( np.array([ r[i] ]) )
-				else :
-					y.append( r[i] + self.gamma*target_q[i] )
+			y = r + self.gamma*target_q*( 1 - terminal )
 
 			# Optimize the critic network according to the targets:
 			if self.summaries :

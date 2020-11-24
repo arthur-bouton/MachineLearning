@@ -117,7 +117,7 @@ class Pendulum() :
 		if self.include_stddev and plot_stddev :
 			ax[0].plot( self.t_data[:-1], array( self.u_data ) + array( self.u_stddev_data )/2, '--' )
 			ax[0].plot( self.t_data[:-1], array( self.u_data ) - array( self.u_stddev_data )/2, '--' )
-		ax[0].set_ylim( [ -self.umax, self.umax ] )
+		#ax[0].set_ylim( [ -self.umax, self.umax ] )
 		ax[0].grid( True )
 		ax[1].set_ylabel( u'$\\theta$' )
 		ax[1].plot( self.t_data, [ x[0] for x in self.x_data ] )

@@ -70,7 +70,7 @@ class Cartpole() :
 
 		if store_data :
 			self.t_data = [ self.t ]
-			self.v_data = []
+			self.u_data = []
 			self.x_data = [ self.x ]
 			if include_stddev :
 				self.v_stddev_data = []
@@ -98,7 +98,7 @@ class Cartpole() :
 
 		if self.store_data :
 			self.t_data.append( self.t )
-			self.v_data.append( u )
+			self.u_data.append( u )
 			self.x_data.append( self.x )
 			if self.include_stddev :
 				self.v_stddev_data.append( stddev )
@@ -135,15 +135,15 @@ class Cartpole() :
 		fig, ax = subplots( 4, sharex=True )
 		fig.canvas.set_window_title( title if title is not None else 'Cartpole trial (state)' )
 		ax[0].set_ylabel( u'$u$' )
-		ax[0].plot( self.t_data[1:], self.v_data, 'r' )
+		ax[0].plot( self.t_data[1:], self.u_data, 'r' )
 		ax[0].plot( self.t_data, [ x[1] for x in self.x_data ] )
 		if self.force_control :
 			ax[0].legend( [ u'$f$', u'$\dot{x}$' ] )
 		else :
 			ax[0].legend( [ u'$v_d$', u'$\dot{x}$' ] )
 		if self.include_stddev and plot_stddev :
-			ax[0].plot( self.t_data[1:], array( self.v_data ) + array( self.v_stddev_data )/2, 'c--' )
-			ax[0].plot( self.t_data[1:], array( self.v_data ) - array( self.v_stddev_data )/2, 'y--' )
+			ax[0].plot( self.t_data[1:], array( self.u_data ) + array( self.v_stddev_data )/2, 'c--' )
+			ax[0].plot( self.t_data[1:], array( self.u_data ) - array( self.v_stddev_data )/2, 'y--' )
 		if not self.force_control :
 			ax[0].set_ylim( [ -self.vmax, self.vmax ] )
 		ax[0].grid( True )

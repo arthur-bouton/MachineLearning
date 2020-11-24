@@ -7,8 +7,8 @@ Distribute workers to parallel threads in order to speed up the collection of da
 
 Author: Arthur Bouton [arthur.bouton@gadz.org]
 
-Dependencies:
-tensorflow r1.13.1
+Dependency:
+tensorflow 1.13.1
 """
 import tensorflow as tf
 import numpy as np
@@ -280,6 +280,7 @@ class PPO() :
 			gae = delta + self.gamma*self.gae_lambda*masks[t]*gae
 			returns.insert( 0, gae + values[t] )
 
+		# GAE with a bounded time horizon:
 		#T = 20
 		#N = len( rewards )
 		#deltas = []
