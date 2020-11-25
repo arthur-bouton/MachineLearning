@@ -192,7 +192,7 @@ class SAC :
 
 
 	@tf.function
-	def _infer_Q_values( self, critic_model, states, actions ) :
+	def _infer_Q_values( self, critic_model, states, actions, return_reg=False ) :
 		states = tf.cast( states, tf.float32 )
 		actions = tf.cast( actions, tf.float32 )
 
@@ -205,11 +205,14 @@ class SAC :
 		# Inference from the critic network:
 		Q_values = critic_model( [ states, actions ] )
 
+		if return_reg :
+			# Return the critic network regularization beside the Q-values:
+			return Q_values, tf.reduce_sum( critic_model.losses ) if critic_model.losses else tf.zeros( 1 )
 		return Q_values
 
 
 	@tf.function
-	def _infer_actions( self, states, sample=False, return_u_mu_sigma=False ) :
+	def _infer_actions( self, states, sample=False, return_reg=False ) :
 		states = tf.cast( states, tf.float32 )
 
 		if self.state_scale is not None :
@@ -229,22 +232,27 @@ class SAC :
 		if self.action_scale is not None :
 			actions = tf.multiply( actions, action_scale, 'scale_actions' )
 
-		if return_u_mu_sigma :
-			return actions, u, mu, sigma
-		return actions
+		a_dict = { 'a': actions, 'u': u, 'mu': mu, 'sigma': sigma }
+		if return_reg :
+			# Addition of the actor network regularization to the outputs:
+			a_dict['reg'] = tf.reduce_sum( self.actor.losses ) if self.actor.losses else tf.zeros( 1 )
+
+		return a_dict
 
 
 	@tf.function
-	def _get_actions_and_log_pis( self, states, sample ) :
+	def _get_actions_and_log_pis( self, states, sample, return_reg=False ) :
 
-		actions, u, mu, sigma = self._infer_actions( states, sample, return_u_mu_sigma=True )
+		a_dict = self._infer_actions( states, sample, return_reg )
 
 		# Unbounded Gaussian action distributions:
-		u_distribs = tfp.distributions.Normal( mu, sigma, allow_nan_stats=False )
+		u_distribs = tfp.distributions.Normal( a_dict['mu'], a_dict['sigma'], allow_nan_stats=False )
 		# Log-likelihood of the policy taking the squashing function into account:
-		log_pis = u_distribs.log_prob( u ) - tf.reduce_sum( tf.math.log( 1 - tf.tanh( u )**2 + 1e-6 ), axis=1, keepdims=True )
+		log_pis = u_distribs.log_prob( a_dict['u'] ) - tf.reduce_sum( tf.math.log( 1 - tf.tanh( a_dict['u'] )**2 + 1e-6 ), axis=1, keepdims=True )
 
-		return actions, log_pis
+		if return_reg :
+			return a_dict['a'], log_pis, a_dict['reg']
+		return a_dict['a'], log_pis
 
 
 	@tf.function
@@ -268,10 +276,12 @@ class SAC :
 		for critic in self.critics :
 			with tf.GradientTape() as tape :
 
-				Q_values = self._infer_Q_values( critic['network'], states, actions )
+				Q_values, reg_loss = self._infer_Q_values( critic['network'], states, actions, return_reg=True )
 
 				# Minimization of the soft Bellman residual:
 				critic_loss = 0.5*tf.reduce_mean( tf.losses.mean_squared_error( Q_targets, Q_values ) )
+				# Add the regularization from the critic network:
+				critic_loss += reg_loss
 
 			gradients = tape.gradient( critic_loss, critic['network'].trainable_variables )
 			critic['optimizer'].apply_gradients( zip( gradients, critic['network'].trainable_variables ) )
@@ -286,13 +296,15 @@ class SAC :
 
 		with tf.GradientTape() as tape :
 
-			actions, log_pis = self._get_actions_and_log_pis( states, sample=True )
+			actions, log_pis, reg_loss = self._get_actions_and_log_pis( states, sample=True, return_reg=True )
 
 			Q_values_list = [ self._infer_Q_values( critic['network'], states, actions ) for critic in self.critics ]
 			Q_values = tf.reduce_min( Q_values_list, axis=0 )
 
 			# Minimization of the KL-divergence from the policy to the exponential of the soft Q-function:
 			actor_loss = tf.reduce_mean( self.alpha()*log_pis - Q_values )
+			# Add the regularization from the actor network:
+			actor_loss += reg_loss
 
 		gradients = tape.gradient( actor_loss, self.actor.trainable_variables )
 		self.actor_optimizer.apply_gradients( zip( gradients, self.actor.trainable_variables ) )
@@ -372,19 +384,19 @@ class SAC :
 	def stoch_action( self, s ) :
 		if s.ndim < 2 : s = s[np.newaxis, :]
 
-		a = self._infer_actions( s, sample=True )
+		a_dict = self._infer_actions( s, sample=True )
 
-		return tf.squeeze( a ).numpy()
+		return tf.squeeze( a_dict['a'] ).numpy()
 
 
 	def best_action( self, s, return_stddev=False ) :
 		if s.ndim < 2 : s = s[np.newaxis, :]
 
-		a, _, _, sigma = self._infer_actions( s, return_u_mu_sigma=True )
+		a_dict = self._infer_actions( s )
 
 		if return_stddev :
-			return tf.squeeze( a ).numpy(), tf.squeeze( sigma ).numpy()
-		return tf.squeeze( a ).numpy()
+			return tf.squeeze( a_dict['a'] ).numpy(), tf.squeeze( a_dict['sigma'] ).numpy()
+		return tf.squeeze( a_dict['a'] ).numpy()
 
 
 	def get_Q_value( self, s, a ) :
@@ -400,8 +412,8 @@ class SAC :
 	def get_V_value( self, s ) :
 		if s.ndim < 2 : s = s[np.newaxis, :]
 
-		a = self._infer_actions( s )
-		V_value = self.get_Q_value( s, a )
+		a_dict = self._infer_actions( s )
+		V_value = self.get_Q_value( s, a_dict['a'] )
 
 		return tf.squeeze( V_value ).numpy()
 
