@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """ 
-Train a simple pendulum with the Soft Actor-Critic (SAC) algorithm.
+Train a cart-pole with the Soft Actor-Critic (SAC) algorithm.
 
 Start a new training by calling this script without argument.
 When the algorithm has converged, send SIGINT to stop it and save the model and the content of the replay buffer by answering "y" when prompted to.
@@ -18,44 +18,8 @@ from SAC import SAC
 import numpy as np
 import sys
 import os
-from pendulum import Pendulum
+from cartpole import Cartpole
 from looptools import Loop_handler, Monitor
-
-
-
-from tensorflow import keras
-from tensorflow.keras import layers
-
-
-# Actor network:
-def actor( s_dim, a_dim ) :
-
-	states = keras.Input( shape=s_dim )
-
-	x = layers.Dense( 100, activation='relu' )( states )
-	y = layers.Dense( 100, activation='relu' )( x )
-
-	mu = layers.Dense( a_dim, activation='linear' )( y )
-
-	x = layers.Dense( 100, activation='relu' )( x )
-
-	sigma = layers.Dense( a_dim, activation='softplus' )( x )
-
-	return keras.Model( states, [ mu, sigma ], name='actor' )
-
-
-# Critic network:
-def critic( s_dim, a_dim, name=None ) :
-
-	states  = keras.Input( shape=s_dim )
-	actions = keras.Input( shape=a_dim )
-
-	x = layers.Concatenate()( [ states, actions ] )
-	x = layers.Dense( 100, activation='relu' )( x )
-	x = layers.Dense( 100, activation='relu' )( x )
-	Q_value = layers.Dense( 1, activation='linear' )( x )
-
-	return keras.Model( [ states, actions ], Q_value, name=name )
 
 
 # Identifier name for the data:
@@ -67,25 +31,25 @@ script_name = os.path.splitext( os.path.basename( __file__ ) )[0]
 session_dir = './training_data/' + script_name + '/' + data_id
 
 # Parameters for the training:
-ENV = Pendulum # A class defining the environment
-EP_LEN = 100 # Number of steps for one episode
+ENV = Cartpole # A class defining the environment
+EP_LEN = 200 # Number of steps for one episode
 ITER_PER_EP = 200 # Number of training iterations between each episode
 EP_MAX = 100 # Maximal number of episodes for the training
 EVAL_FREQ = 1 # Frequency of the policy evaluation
 
 hyper_params = {}
-hyper_params['s_dim'] = 2 # Dimension of the state space
+hyper_params['s_dim'] = 4 # Dimension of the state space
 hyper_params['a_dim'] = 1 # Dimension of the action space
-hyper_params['state_scale'] = [ np.pi, 2*np.pi ] # A scalar or a vector to normalize the state
+hyper_params['state_scale'] = [ 1, 1, np.pi, 2*np.pi ] # A scalar or a vector to normalize the state
 hyper_params['action_scale'] = None # A scalar or a vector to scale the actions
-hyper_params['actor_def'] = actor # The function defining the actor model
-hyper_params['critic_def'] = critic # The function defining the critic model
-hyper_params['gamma'] = 0.7 # Discount factor applied to the reward
-hyper_params['target_entropy'] = -2 # Desired target entropy of the policy
-hyper_params['tau'] = 5e-3 # Soft target update factor
-hyper_params['buffer_size'] = 1e4 # Maximal size of the replay buffer
+#hyper_params['actor_def'] = actor # The function defining the actor model
+#hyper_params['critic_def'] = critic # The function defining the critic model
+hyper_params['gamma'] = 0.9 # Discount factor applied to the reward
+#hyper_params['target_entropy'] = -1 # Desired target entropy of the policy
+#hyper_params['tau'] = 5e-3 # Soft target update factor
+#hyper_params['buffer_size'] = 1e6 # Maximal size of the replay buffer
 hyper_params['minibatch_size'] = 64 # Size of each minibatch
-hyper_params['learning_rate'] = 1e-3 # Default learning rate used for all the networks
+#hyper_params['learning_rate'] = 3e-4 # Default learning rate used for all the networks
 hyper_params['alpha0'] = 0.1 # Initial value of the entropy temperature
 hyper_params['seed'] = None # Random seed for the initialization of all random generators
 
@@ -97,7 +61,7 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 	if len( sys.argv ) > 1 and sys.argv[1] == 'load' :
 		if len( sys.argv ) > 2 :
 			session_dir = sys.argv[2]
-		sac.load( session_dir )
+		sac.load( session_dir + '/session' )
 		if not sac.load_replay_buffer( session_dir + '/replay_buffer.pkl' ) :
 			print( 'Could not find %s: starting with an empty replay buffer.' % ( session_dir + '/replay_buffer.pkl' ) )
 
@@ -196,13 +160,14 @@ else :
 	sac.load( session_dir )
 
 
-	test_env = ENV( 180, store_data=True, include_stddev=True )
+	test_env = ENV( ( 0, 180 ), store_data=True, include_stddev=True )
 	for t in range( EP_LEN ) :
 		a, stddev = sac.best_action( test_env.get_obs(), return_stddev=True )
 		_, _, ep_done, _ = test_env.step( a, stddev )
 		if ep_done : break
 	print( 'Trial result: ', end='' )
 	test_env.print_eval()
-	test_env.plot3D( sac.best_action, sac.get_V_value, include_stddev=True )
-	test_env.plot_trial( plot_stddev=True )
+	test_env.plot_trial()
+	test_env.animate()
+	#test_env.animate( 'cartpole_ddpg.gif' )
 	test_env.show()
