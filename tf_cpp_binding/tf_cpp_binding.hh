@@ -66,9 +66,4 @@ class TF_model
 };
 
 
-// Declaration of an alias declaration following the C++11 standard:
-template <class T>
-using ptr_t = std::shared_ptr<TF_model<T>>;
-
-
 #endif
