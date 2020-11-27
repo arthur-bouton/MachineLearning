@@ -1,4 +1,4 @@
-# Various machine learning scripts and tools in Python
+# Various machine learning scripts and tools
 
 ![](cartpole_ppo_1.gif?raw=true "Starting from the same initial position it has been trained with") | ![](cartpole_ppo_2.gif?raw=true "Starting from a different position than the training one")
 :-:|:-:
@@ -30,6 +30,7 @@
 - **[LQR.py](LQR.py)**: Linear-Quadratic Regulators for finite or infinite horizons and continuous or discrete times.
 - **[lm_slsqp_cartpole.py](lm_slsqp_cartpole.py)**: Automated control synthesis to swing up a cart-pole for which the physical parameters are unknown. The parameter identification is performed by a non-linear regression, the trajectory planning is based on a direct collocation method using non-linear programming and the trajectory tracking is ensured by LQR control.
 - **[quadratures.py](quadratures.py)**: Contains a class providing Gauss-Lobatto quadratures and barycentric Lagrange interpolation.
+- **[tf_cpp_binding](tf_cpp_binding)**: Contains a C++ template class to bind TensorFlow native C API in order to easily import and use trained models.
 
 [1] Van Hasselt, Hado, and Marco A. Wiering. "Reinforcement learning in continuous action spaces."<br />
     2007 IEEE International Symposium on Approximate Dynamic Programming and Reinforcement Learning. IEEE, 2007.<br />
