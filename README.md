@@ -47,7 +47,7 @@
 
 All you will need are the following packages:
 
-`$ pip install scipy matplotlib tqdm tensorflow tensorflow_probability`
+`$ pip install scipy matplotlib tensorflow tensorflow_probability tqdm PyYAML`
 
 <br />
 <br />

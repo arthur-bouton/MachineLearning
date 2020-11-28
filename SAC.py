@@ -14,6 +14,7 @@ import numpy as np
 from collections import deque
 import random
 from tqdm import trange
+import yaml
 
 
 from tensorflow import keras
@@ -69,7 +70,7 @@ class SAC :
 	gamma : float, optional, default: 0.99
 		Discount factor applied to the reward.
 	target_entropy : negative float, optional, default: None
-		Desired target entropy of the policy.
+		Desired target entropy H of the policy.
 	tau : float, optional, default: 1e-3
 		Soft target update factor.
 	buffer_size : int, optional, default: 1e6
@@ -122,16 +123,17 @@ class SAC :
 				  alpha0=0.7, actor_def=actor_model_def, critic_def=critic_model_def,
 				  seed=None ) :
 
-		self.gamma = gamma
-		self.tau = tau
-		self.minibatch_size = minibatch_size
+		self._variables = {}
+		self._variables['gamma'] = gamma
+		self._variables['tau'] = tau
+		self._variables['minibatch_size'] = minibatch_size
 
 		# Definition of the target entropy:
 		if target_entropy is None :
 			target_entropy = -a_dim
 		elif target_entropy > 0 :
 			raise ValueError( 'Wrong argument for the target entropy: H has to be negative' )
-		self.H = target_entropy
+		self._variables['target_entropy'] = target_entropy
 
 		# Definition of each learning rate:
 		if actor_lr is None :
@@ -140,12 +142,15 @@ class SAC :
 			critic_lr = learning_rate
 		if alpha_lr is None :
 			alpha_lr = learning_rate
+		self._variables['actor_lr'] = actor_lr
+		self._variables['critic_lr'] = critic_lr
+		self._variables['alpha_lr'] = alpha_lr
 
 		# Temperature variable before it is constrained to be positive:
 		self._alpha_unconstrained = tf.Variable( np.log( np.exp( alpha0 ) - 1 ), dtype=tf.float32 )
 
 		# Number of iterations done:
-		self.n_iter = 0
+		self._variables['n_iter'] = 0
 
 		# Instantiation of the replay buffer:
 		self.replay_buffer = deque( maxlen=int( buffer_size ) )
@@ -156,15 +161,8 @@ class SAC :
 
 
 		# Declaration of the scaling factors:
-		if state_scale is not None :
-			self.state_scale = tf.constant( state_scale, tf.float32, name='state_scale' )
-		else :
-			self.state_scale = None
-
-		if action_scale is not None :
-			self.action_scale = tf.constant( action_scale, tf.float32, name='action_scale' )
-		else :
-			self.action_scale = None
+		self._variables['state_scale'] = state_scale
+		self._variables['action_scale'] = action_scale
 
 
 		# Instantiation of the actor network:
@@ -196,11 +194,11 @@ class SAC :
 		states = tf.cast( states, tf.float32 )
 		actions = tf.cast( actions, tf.float32 )
 
-		if self.state_scale is not None :
-			states = tf.divide( states, self.state_scale, 'scale_states' )
+		if self._variables['state_scale'] is not None :
+			states = tf.divide( states, self._variables['state_scale'], 'scale_states' )
 
-		if self.action_scale is not None :
-			actions = tf.divide( actions, action_scale, 'scale_actions' )
+		if self._variables['action_scale'] is not None :
+			actions = tf.divide( actions, _variables['action_scale'], 'scale_actions' )
 
 		# Inference from the critic network:
 		Q_values = critic_model( [ states, actions ] )
@@ -215,8 +213,8 @@ class SAC :
 	def _infer_actions( self, states, sample=False, return_reg=False ) :
 		states = tf.cast( states, tf.float32 )
 
-		if self.state_scale is not None :
-			states = tf.divide( states, self.state_scale, 'scale_states' )
+		if self._variables['state_scale'] is not None :
+			states = tf.divide( states, self._variables['state_scale'], 'scale_states' )
 
 		# Inference from the actor network:
 		mu, sigma = self.actor( states )
@@ -229,8 +227,8 @@ class SAC :
 		# Squashing of the actions:
 		actions = tf.tanh( u )
 
-		if self.action_scale is not None :
-			actions = tf.multiply( actions, action_scale, 'scale_actions' )
+		if self._variables['action_scale'] is not None :
+			actions = tf.multiply( actions, _variables['action_scale'], 'scale_actions' )
 
 		a_dict = { 'a': actions, 'u': u, 'mu': mu, 'sigma': sigma }
 		if return_reg :
@@ -270,7 +268,7 @@ class SAC :
 		next_Q_values = tf.reduce_min( next_Q_values_list, axis=0 )
 
 		# Computation of the soft temporal difference:
-		Q_targets = rewards + self.gamma*( next_Q_values - self.alpha()*next_log_pis )*masks
+		Q_targets = rewards + self._variables['gamma']*( next_Q_values - self.get_alpha()*next_log_pis )*masks
 
 		critic_losses = []
 		for critic in self.critics :
@@ -302,7 +300,7 @@ class SAC :
 			Q_values = tf.reduce_min( Q_values_list, axis=0 )
 
 			# Minimization of the KL-divergence from the policy to the exponential of the soft Q-function:
-			actor_loss = tf.reduce_mean( self.alpha()*log_pis - Q_values )
+			actor_loss = tf.reduce_mean( self.get_alpha()*log_pis - Q_values )
 			# Add the regularization from the actor network:
 			actor_loss += reg_loss
 
@@ -313,7 +311,7 @@ class SAC :
 
 
 	@tf.function
-	def alpha( self ) :
+	def get_alpha( self ) :
 		""" Return the positive-only entropy temperature """
 		return tf.math.softplus( self._alpha_unconstrained )
 
@@ -326,7 +324,7 @@ class SAC :
 		with tf.GradientTape() as tape :
 
 			# Constraint of the average entropy of the policy to a desired minimum value:
-			alpha_loss = -self.alpha()*tf.reduce_mean( log_pis + self.H )
+			alpha_loss = -self.get_alpha()*tf.reduce_mean( log_pis + self._variables['target_entropy'] )
 
 		gradients = tape.gradient( alpha_loss, [ self._alpha_unconstrained ] )
 		self.alpha_optimizer.apply_gradients( zip( gradients, [ self._alpha_unconstrained ] ) )
@@ -339,7 +337,7 @@ class SAC :
 		for critic in self.critics :
 			# Tracking of the Q-function networks by the target networks with an exponentially moving average of the weights:
 			for target_params, params in zip( critic['target_network'].trainable_variables, critic['network'].trainable_variables ) :
-				target_params.assign( self.tau*params + ( 1 - self.tau )*target_params )
+				target_params.assign( self._variables['tau']*params + ( 1 - self._variables['tau'] )*target_params )
 
 
 	def _sample_batch( self, batch_size ) :
@@ -358,17 +356,17 @@ class SAC :
 
 	def train( self, iterations=1 ) :
 
-		if len( self.replay_buffer ) < self.minibatch_size :
+		if len( self.replay_buffer ) < self._variables['minibatch_size'] :
 			return 0
 
 		Lt = 0
 
 		for _ in trange( iterations, desc='Training the networks', leave=False ) :
 
-			self.n_iter += 1
+			self._variables['n_iter'] += 1
 
 			# Randomly pick samples in the replay buffer:
-			batch = self._sample_batch( self.minibatch_size )
+			batch = self._sample_batch( self._variables['minibatch_size'] )
 
 			Lt += self._train_Q_networks( batch )
 
@@ -379,6 +377,10 @@ class SAC :
 			self._update_target_Q_networks()
 
 		return float( Lt )/iterations
+
+
+	def n_iter( self ) :
+		return self._variables['n_iter']
 
 
 	def stoch_action( self, s ) :
@@ -422,9 +424,9 @@ class SAC :
 		np.save( filename, optimizer.get_weights(), allow_pickle=True )
 
 	
-	def _load_optimizer_weights( self, optimizer, model, filename ) :
+	def _load_optimizer_weights( self, optimizer, variables, filename ) :
 		weights = np.load( filename + '.npy', allow_pickle=True )
-		optimizer._create_all_weights( model.trainable_variables )
+		optimizer._create_all_weights( variables )
 		optimizer.set_weights( weights )
 
 
@@ -432,30 +434,55 @@ class SAC :
 
 		extension = '.hdf5' if hdf5 else ''
 
+		# Save the actor model and its optimizer:
 		self.actor.save( directory + '/actor' + extension )
 		if optimizer_weights :
 			self._save_optimizer_weights( self.actor_optimizer, directory + '/actor_optimizer_weights' )
 
+		# Save the critic models and their optimizers:
 		for i, critic in enumerate( self.critics ) :
 			critic['network'].save( directory + '/critic_%i%s' % ( i + 1, extension ) )
 			critic['target_network'].save( directory + '/critic_%i_target%s' % ( i + 1, extension ) )
 			if optimizer_weights :
 				self._save_optimizer_weights( critic['optimizer'], directory + '/critic_%i_optimizer_weights' % ( i + 1 ) )
 
+		# Save alpha's optimizer:
+		if optimizer_weights :
+			self._save_optimizer_weights( self.alpha_optimizer, directory + '/alpha_optimizer_weights' )
+
+		# Save the internal variables:
+		self._variables['alpha_unconstrained'] = float( self._alpha_unconstrained )
+
+		with open( directory + '/variables.yaml', 'w' ) as f :
+			f.write( '# Soft Actor-Critic variables:\n' )
+			yaml.dump( self._variables, f )
+
 
 	def load( self, directory, hdf5=True, optimizer_weights=True ) :
 
 		extension = '.hdf5' if hdf5 else ''
 
+		# Load the actor model and its optimizer:
 		self.actor = keras.models.load_model( directory + '/actor' + extension, compile=False )
 		if optimizer_weights :
-			self._load_optimizer_weights( self.actor_optimizer, self.actor, directory + '/actor_optimizer_weights' )
+			self._load_optimizer_weights( self.actor_optimizer, self.actor.trainable_variables, directory + '/actor_optimizer_weights' )
 
+		# Load the critic models and their optimizers:
 		for i, critic in enumerate( self.critics ) :
 			critic['network'] = keras.models.load_model( directory + '/critic_%i%s' % ( i + 1, extension ), compile=False )
 			critic['target_network'] = keras.models.load_model( directory + '/critic_%i_target%s' % ( i + 1, extension ), compile=False )
 			if optimizer_weights :
-				self._load_optimizer_weights( critic['optimizer'], critic['network'], directory + '/critic_%i_optimizer_weights' % ( i + 1 ) )
+				self._load_optimizer_weights( critic['optimizer'], critic['network'].trainable_variables, directory + '/critic_%i_optimizer_weights' % ( i + 1 ) )
+
+		# Load alpha's optimizer:
+		if optimizer_weights :
+			self._load_optimizer_weights( self.alpha_optimizer, [ self._alpha_unconstrained ], directory + '/alpha_optimizer_weights' )
+
+		# Load the internal variables:
+		with open( directory + '/variables.yaml', 'r' ) as f :
+			self._variables = yaml.load( f, Loader=yaml.FullLoader )
+
+		self._alpha_unconstrained = tf.Variable( self._variables['alpha_unconstrained'], dtype=tf.float32 )
 
 
 	def save_replay_buffer( self, filename ) :
