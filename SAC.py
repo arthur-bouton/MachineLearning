@@ -14,6 +14,7 @@ import numpy as np
 from collections import deque
 import random
 from tqdm import trange
+import pickle
 import yaml
 
 
@@ -71,11 +72,11 @@ class SAC :
 		Discount factor applied to the reward.
 	target_entropy : negative float, optional, default: None
 		Desired target entropy H of the policy.
-	tau : float, optional, default: 1e-3
+	tau : float, optional, default: 5e-3
 		Soft target update factor.
 	buffer_size : int, optional, default: 1e6
 		Maximal size of the replay buffer.
-	minibatch_size : int, optional, default: 64
+	minibatch_size : int, optional, default: 256
 		Size of each minibatch.
 	learning_rate : float, optional, default: 3e-4
 		Default learning rate used for all the networks.
@@ -420,35 +421,35 @@ class SAC :
 		return tf.squeeze( V_value ).numpy()
 
 	
-	def _save_optimizer_weights( self, optimizer, filename ) :
-		np.save( filename, optimizer.get_weights(), allow_pickle=True )
-
-	
-	def _load_optimizer_weights( self, optimizer, variables, filename ) :
-		weights = np.load( filename + '.npy', allow_pickle=True )
-		optimizer._create_all_weights( variables )
-		optimizer.set_weights( weights )
+	def _save_optimizer( self, optimizer, filename ) :
+		with open( filename + '.pkl', 'wb' ) as f :
+			pickle.dump( optimizer, f )
 
 
-	def save( self, directory, hdf5=True, optimizer_weights=True ) :
+	def _load_optimizer( self, filename ) :
+		with open( filename + '.pkl', 'rb' ) as f :
+			return pickle.load( f )
+
+
+	def save( self, directory, hdf5=False, optimizers=True ) :
 
 		extension = '.hdf5' if hdf5 else ''
 
 		# Save the actor model and its optimizer:
 		self.actor.save( directory + '/actor' + extension )
-		if optimizer_weights :
-			self._save_optimizer_weights( self.actor_optimizer, directory + '/actor_optimizer_weights' )
+		if optimizers :
+			self._save_optimizer( self.actor_optimizer, directory + '/actor_optimizer' )
 
 		# Save the critic models and their optimizers:
 		for i, critic in enumerate( self.critics ) :
 			critic['network'].save( directory + '/critic_%i%s' % ( i + 1, extension ) )
 			critic['target_network'].save( directory + '/critic_%i_target%s' % ( i + 1, extension ) )
-			if optimizer_weights :
-				self._save_optimizer_weights( critic['optimizer'], directory + '/critic_%i_optimizer_weights' % ( i + 1 ) )
+			if optimizers :
+				self._save_optimizer( critic['optimizer'], directory + '/critic_%i_optimizer' % ( i + 1 ) )
 
-		# Save alpha's optimizer:
-		if optimizer_weights :
-			self._save_optimizer_weights( self.alpha_optimizer, directory + '/alpha_optimizer_weights' )
+		# Save the temperature optimizer:
+		if optimizers :
+			self._save_optimizer( self.alpha_optimizer, directory + '/alpha_optimizer' )
 
 		# Save the internal variables:
 		self._variables['alpha_unconstrained'] = float( self._alpha_unconstrained )
@@ -458,25 +459,25 @@ class SAC :
 			yaml.dump( self._variables, f )
 
 
-	def load( self, directory, hdf5=True, optimizer_weights=True ) :
+	def load( self, directory, hdf5=False, optimizers=True ) :
 
 		extension = '.hdf5' if hdf5 else ''
 
 		# Load the actor model and its optimizer:
 		self.actor = keras.models.load_model( directory + '/actor' + extension, compile=False )
-		if optimizer_weights :
-			self._load_optimizer_weights( self.actor_optimizer, self.actor.trainable_variables, directory + '/actor_optimizer_weights' )
+		if optimizers :
+			self.actor_optimizer = self._load_optimizer( directory + '/actor_optimizer' )
 
 		# Load the critic models and their optimizers:
 		for i, critic in enumerate( self.critics ) :
 			critic['network'] = keras.models.load_model( directory + '/critic_%i%s' % ( i + 1, extension ), compile=False )
 			critic['target_network'] = keras.models.load_model( directory + '/critic_%i_target%s' % ( i + 1, extension ), compile=False )
-			if optimizer_weights :
-				self._load_optimizer_weights( critic['optimizer'], critic['network'].trainable_variables, directory + '/critic_%i_optimizer_weights' % ( i + 1 ) )
+			if optimizers :
+				critic['optimizer'] = self._load_optimizer( directory + '/critic_%i_optimizer' % ( i + 1 ) )
 
-		# Load alpha's optimizer:
-		if optimizer_weights :
-			self._load_optimizer_weights( self.alpha_optimizer, [ self._alpha_unconstrained ], directory + '/alpha_optimizer_weights' )
+		# Load the temperature optimizer:
+		if optimizers :
+			self.alpha_optimizer = self._load_optimizer( directory + '/alpha_optimizer' )
 
 		# Load the internal variables:
 		with open( directory + '/variables.yaml', 'r' ) as f :
@@ -487,14 +488,12 @@ class SAC :
 
 	def save_replay_buffer( self, filename ) :
 		with open( filename, 'wb' ) as f :
-			import pickle
 			pickle.dump( self.replay_buffer, f )
 
 
 	def load_replay_buffer( self, filename ) :
 		try :
 			with open( filename, 'rb' ) as f :
-				import pickle
 				temp_buf = pickle.load( f )
 			self.replay_buffer = temp_buf
 			return True
