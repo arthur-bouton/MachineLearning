@@ -191,7 +191,7 @@ class SAC :
 
 
 	@tf.function
-	def _infer_Q_values( self, critic_model, states, actions, return_reg=False ) :
+	def _infer_Q_values( self, critic_model, states, actions, return_reg=False, training=False ) :
 		states = tf.cast( states, tf.float32 )
 		actions = tf.cast( actions, tf.float32 )
 
@@ -202,7 +202,7 @@ class SAC :
 			actions = tf.divide( actions, _variables['action_scale'], 'scale_actions' )
 
 		# Inference from the critic network:
-		Q_values = critic_model( [ states, actions ] )
+		Q_values = critic_model( [ states, actions ], training=training )
 
 		if return_reg :
 			# Return the critic network regularization beside the Q-values:
@@ -211,14 +211,14 @@ class SAC :
 
 
 	@tf.function
-	def _infer_actions( self, states, sample=False, return_reg=False ) :
+	def _infer_actions( self, states, sample=False, return_reg=False, training=False ) :
 		states = tf.cast( states, tf.float32 )
 
 		if self._variables['state_scale'] is not None :
 			states = tf.divide( states, self._variables['state_scale'], 'scale_states' )
 
 		# Inference from the actor network:
-		mu, sigma = self.actor( states )
+		mu, sigma = self.actor( states, training=training )
 
 		if sample :
 			u = tf.random.normal( mu.shape, mu, sigma )
@@ -240,9 +240,9 @@ class SAC :
 
 
 	@tf.function
-	def _get_actions_and_log_pis( self, states, sample, return_reg=False ) :
+	def _get_actions_and_log_pis( self, states, sample, return_reg=False, training=False ) :
 
-		a_dict = self._infer_actions( states, sample, return_reg )
+		a_dict = self._infer_actions( states, sample, return_reg, training=training )
 
 		# Unbounded Gaussian action distributions:
 		u_distribs = tfp.distributions.Normal( a_dict['mu'], a_dict['sigma'], allow_nan_stats=False )
@@ -275,7 +275,7 @@ class SAC :
 		for critic in self.critics :
 			with tf.GradientTape() as tape :
 
-				Q_values, reg_loss = self._infer_Q_values( critic['network'], states, actions, return_reg=True )
+				Q_values, reg_loss = self._infer_Q_values( critic['network'], states, actions, return_reg=True, training=True )
 
 				# Minimization of the soft Bellman residual:
 				critic_loss = 0.5*tf.reduce_mean( tf.losses.mean_squared_error( Q_targets, Q_values ) )
@@ -295,7 +295,7 @@ class SAC :
 
 		with tf.GradientTape() as tape :
 
-			actions, log_pis, reg_loss = self._get_actions_and_log_pis( states, sample=True, return_reg=True )
+			actions, log_pis, reg_loss = self._get_actions_and_log_pis( states, sample=True, return_reg=True, training=True )
 
 			Q_values_list = [ self._infer_Q_values( critic['network'], states, actions ) for critic in self.critics ]
 			Q_values = tf.reduce_min( Q_values_list, axis=0 )
