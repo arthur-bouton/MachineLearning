@@ -485,6 +485,12 @@ class SAC :
 
 		self._alpha_unconstrained = tf.Variable( self._variables['alpha_unconstrained'], dtype=tf.float32 )
 
+		# Update the optimizers' learning rates:
+		self.actor_optimizer.learning_rate = self._variables['actor_lr']
+		self.alpha_optimizer.learning_rate = self._variables['alpha_lr']
+		for ciritc in self.critics :
+			critic['optimizer'].learning_rate = self._variables['critic_lr']
+
 
 	def save_replay_buffer( self, filename ) :
 		with open( filename, 'wb' ) as f :
