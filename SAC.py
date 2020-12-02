@@ -37,11 +37,11 @@ def actor_model_def( s_dim, a_dim ) :
 
 	sigma = layers.Dense( a_dim, activation='softplus' )( x )
 
-	return keras.Model( states, [ mu, sigma ], name='actor' )
+	return keras.Model( states, [ mu, sigma ] )
 
 
 # Default critic network:
-def critic_model_def( s_dim, a_dim, name=None ) :
+def critic_model_def( s_dim, a_dim ) :
 
 	states  = keras.Input( shape=s_dim )
 	actions = keras.Input( shape=a_dim )
@@ -51,7 +51,7 @@ def critic_model_def( s_dim, a_dim, name=None ) :
 	x = layers.Dense( 256, activation='relu' )( x )
 	Q_value = layers.Dense( 1, activation='linear' )( x )
 
-	return keras.Model( [ states, actions ], Q_value, name=name )
+	return keras.Model( [ states, actions ], Q_value )
 
 
 class SAC :
@@ -129,14 +129,14 @@ class SAC :
 		self._variables['tau'] = tau
 		self._variables['minibatch_size'] = minibatch_size
 
-		# Definition of the target entropy:
+		# Define the target entropy:
 		if target_entropy is None :
 			target_entropy = -a_dim
 		elif target_entropy > 0 :
 			raise ValueError( 'Wrong argument for the target entropy: H has to be negative' )
 		self._variables['target_entropy'] = target_entropy
 
-		# Definition of each learning rate:
+		# Define each learning rate:
 		if actor_lr is None :
 			actor_lr = learning_rate
 		if critic_lr is None :
@@ -153,7 +153,7 @@ class SAC :
 		# Number of iterations done:
 		self._variables['n_iter'] = 0
 
-		# Instantiation of the replay buffer:
+		# Instantiate the replay buffer:
 		self.replay_buffer = deque( maxlen=int( buffer_size ) )
 
 		# Set the different random seeds:
@@ -161,32 +161,32 @@ class SAC :
 		tf.random.set_seed( seed )
 
 
-		# Declaration of the scaling factors:
+		# Define the scaling factors:
 		self._variables['state_scale'] = state_scale
 		self._variables['action_scale'] = action_scale
 
 
-		# Instantiation of the actor network:
+		# Instantiate the actor network:
 		self.actor = actor_def( s_dim, a_dim )
 		self.actor_optimizer = tf.optimizers.Adam( learning_rate=actor_lr )
 
 
-		# Instantiation of the critic networks:
+		# Instantiate the critic networks:
 		self.critics = []
 		for _ in range( 2 ) :
 			critic = {}
-			# Instantiation of the Q-function networks:
+			# Instantiate the Q-function networks:
 			critic['network'] = critic_def( s_dim, a_dim )
 			critic['optimizer'] = tf.optimizers.Adam( learning_rate=critic_lr )
-			# Instantiation of the target Q-function networks:
+			# Instantiate the target Q-function networks:
 			critic['target_network'] = critic_def( s_dim, a_dim )
-			# Synchronization of the target network parameters:
+			# Synchronize the target network parameters:
 			for target_params, params in zip( critic['target_network'].trainable_variables, critic['network'].trainable_variables ) :
 				target_params.assign( params )
 			self.critics.append( critic )
 
 
-		# Instantiation of the temperature optimizer:
+		# Instantiate the temperature optimizer:
 		self.alpha_optimizer = tf.optimizers.Adam( learning_rate=alpha_lr )
 
 
@@ -196,10 +196,10 @@ class SAC :
 		actions = tf.cast( actions, tf.float32 )
 
 		if self._variables['state_scale'] is not None :
-			states = tf.divide( states, self._variables['state_scale'], 'scale_states' )
+			states = tf.divide( states, self._variables['state_scale'] )
 
 		if self._variables['action_scale'] is not None :
-			actions = tf.divide( actions, _variables['action_scale'], 'scale_actions' )
+			actions = tf.divide( actions, _variables['action_scale'] )
 
 		# Inference from the critic network:
 		Q_values = critic_model( [ states, actions ], training=training )
@@ -215,7 +215,7 @@ class SAC :
 		states = tf.cast( states, tf.float32 )
 
 		if self._variables['state_scale'] is not None :
-			states = tf.divide( states, self._variables['state_scale'], 'scale_states' )
+			states = tf.divide( states, self._variables['state_scale'] )
 
 		# Inference from the actor network:
 		mu, sigma = self.actor( states, training=training )
@@ -225,15 +225,15 @@ class SAC :
 		else :
 			u = mu
 
-		# Squashing of the actions:
+		# Squash the actions:
 		actions = tf.tanh( u )
 
 		if self._variables['action_scale'] is not None :
-			actions = tf.multiply( actions, _variables['action_scale'], 'scale_actions' )
+			actions = tf.multiply( actions, _variables['action_scale'] )
 
 		a_dict = { 'a': actions, 'u': u, 'mu': mu, 'sigma': sigma }
 		if return_reg :
-			# Addition of the actor network regularization to the outputs:
+			# Add the actor network regularization to the outputs:
 			a_dict['reg'] = tf.reduce_sum( self.actor.losses ) if self.actor.losses else tf.zeros( 1 )
 
 		return a_dict
@@ -268,7 +268,7 @@ class SAC :
 		next_Q_values_list = [ self._infer_Q_values( critic['target_network'], next_states, next_actions ) for critic in self.critics ]
 		next_Q_values = tf.reduce_min( next_Q_values_list, axis=0 )
 
-		# Computation of the soft temporal difference:
+		# Compute the soft temporal difference:
 		Q_targets = rewards + self._variables['gamma']*( next_Q_values - self.get_alpha()*next_log_pis )*masks
 
 		critic_losses = []
@@ -277,7 +277,7 @@ class SAC :
 
 				Q_values, reg_loss = self._infer_Q_values( critic['network'], states, actions, return_reg=True, training=True )
 
-				# Minimization of the soft Bellman residual:
+				# Minimize the soft Bellman residual:
 				critic_loss = 0.5*tf.reduce_mean( tf.losses.mean_squared_error( Q_targets, Q_values ) )
 				# Add the regularization from the critic network:
 				critic_loss += reg_loss
@@ -300,7 +300,7 @@ class SAC :
 			Q_values_list = [ self._infer_Q_values( critic['network'], states, actions ) for critic in self.critics ]
 			Q_values = tf.reduce_min( Q_values_list, axis=0 )
 
-			# Minimization of the KL-divergence from the policy to the exponential of the soft Q-function:
+			# Minimize the KL-divergence from the policy to the exponential of the soft Q-function:
 			actor_loss = tf.reduce_mean( self.get_alpha()*log_pis - Q_values )
 			# Add the regularization from the actor network:
 			actor_loss += reg_loss
@@ -324,7 +324,7 @@ class SAC :
 
 		with tf.GradientTape() as tape :
 
-			# Constraint of the average entropy of the policy to a desired minimum value:
+			# Constrain the average entropy of the policy to a desired minimum value:
 			alpha_loss = -self.get_alpha()*tf.reduce_mean( log_pis + self._variables['target_entropy'] )
 
 		gradients = tape.gradient( alpha_loss, [ self._alpha_unconstrained ] )
@@ -360,7 +360,7 @@ class SAC :
 		if len( self.replay_buffer ) < self._variables['minibatch_size'] :
 			return 0
 
-		Lt = 0
+		Q_loss = 0
 
 		for _ in trange( iterations, desc='Training the networks', leave=False ) :
 
@@ -369,7 +369,7 @@ class SAC :
 			# Randomly pick samples in the replay buffer:
 			batch = self._sample_batch( self._variables['minibatch_size'] )
 
-			Lt += self._train_Q_networks( batch )
+			Q_loss += self._train_Q_networks( batch )
 
 			self._train_actor_network( batch['states'] )
 
@@ -377,7 +377,7 @@ class SAC :
 
 			self._update_target_Q_networks()
 
-		return float( Lt )/iterations
+		return float( Q_loss )/iterations
 
 
 	def n_iter( self ) :

@@ -41,11 +41,11 @@ def actor( s_dim, a_dim ) :
 
 	sigma = layers.Dense( a_dim, activation='softplus' )( x )
 
-	return keras.Model( states, [ mu, sigma ], name='actor' )
+	return keras.Model( states, [ mu, sigma ] )
 
 
 # Critic network:
-def critic( s_dim, a_dim, name=None ) :
+def critic( s_dim, a_dim ) :
 
 	states  = keras.Input( shape=s_dim )
 	actions = keras.Input( shape=a_dim )
@@ -55,7 +55,7 @@ def critic( s_dim, a_dim, name=None ) :
 	x = layers.Dense( 100, activation='relu' )( x )
 	Q_value = layers.Dense( 1, activation='linear' )( x )
 
-	return keras.Model( [ states, actions ], Q_value, name=name )
+	return keras.Model( [ states, actions ], Q_value )
 
 
 # Identifier name for the data:
@@ -108,7 +108,7 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 	eval_env = ENV()
 
 	n_ep = 0
-	L = 0
+	Q_loss = 0
 
 	reward_graph = Monitor( [ 1 , 1 ], titles=[ 'Average reward per trial', 'Temperature' ], xlabel='trials', keep=False )
 
@@ -144,11 +144,11 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 				break
 
 			# Train the networks (off-line):
-			L = sac.train( ITER_PER_EP )
+			Q_loss = sac.train( ITER_PER_EP )
 
 
 			# Evaluate the policy:
-			if L != 0 and n_ep % EVAL_FREQ == 0 :
+			if Q_loss != 0 and n_ep % EVAL_FREQ == 0 :
 				eval_env.reset( store_data=True )
 				stddev_m = 0
 				for t in range( EP_LEN ) :
@@ -158,7 +158,8 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 					if ep_done : break
 				stddev_m /= EP_LEN
 				alpha = float( sac.get_alpha() )
-				print( 'It %i | Ep %i | Lt %+8.4f | temp %5.3f | Sd %+5.2f | ' % ( sac.n_iter(), n_ep, L, alpha, stddev_m ), end='' )
+				print( 'It %i | Ep %i | LQ %+7.4f | temp %5.3f | Sd %+5.2f | ' %
+				       ( sac.n_iter(), n_ep, Q_loss, alpha, stddev_m ), end='' )
 				eval_env.print_eval()
 				sys.stdout.flush()
 				reward_graph.add_data( n_ep, eval_env.get_Rt(), alpha )
