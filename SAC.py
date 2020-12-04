@@ -199,7 +199,7 @@ class SAC :
 			states = tf.divide( states, self._variables['state_scale'] )
 
 		if self._variables['action_scale'] is not None :
-			actions = tf.divide( actions, _variables['action_scale'] )
+			actions = tf.divide( actions, self._variables['action_scale'] )
 
 		# Inference from the critic network:
 		Q_values = critic_model( [ states, actions ], training=training )
@@ -229,7 +229,7 @@ class SAC :
 		actions = tf.tanh( u )
 
 		if self._variables['action_scale'] is not None :
-			actions = tf.multiply( actions, _variables['action_scale'] )
+			actions = tf.multiply( actions, self._variables['action_scale'] )
 
 		a_dict = { 'a': actions, 'u': u, 'mu': mu, 'sigma': sigma }
 		if return_reg :
