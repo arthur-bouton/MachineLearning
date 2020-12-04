@@ -3,9 +3,9 @@
 Train a cart-pole with the Deep Deterministic Policy Gradient (DDPG) algorithm.
 
 Start a new training by calling this script without argument.
-When the algorithm has converged, send SIGINT to stop it and save the model and the content of the replay buffer by answering "y" when prompted to.
+When the algorithm has converged, send SIGINT to stop it and save the graph and the content of the replay buffer by answering "y" when prompted to.
 Then run the script with the word "eval" as first argument in order to evaluate the obtained policy.
-The training can be took up with a saved model and replay buffer by calling the script with the word "load" as first argument.
+The training can be took up with a saved graph and replay buffer by calling the script with the word "load" as first argument.
 
 Author: Arthur Bouton [arthur.bouton@gadz.org]
 

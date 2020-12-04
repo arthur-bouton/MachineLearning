@@ -3,9 +3,9 @@
 Train a cart-pole with the Proximal Policy Optimization (PPO) algorithm and workers running in the main thread.
 
 Start a new training by calling this script without argument.
-When the algorithm has converged, send SIGINT to stop it and save the model by answering "y" when prompted to.
+When the algorithm has converged, send SIGINT to stop it and save the graph by answering "y" when prompted to.
 Then run the script with the word "eval" as first argument in order to evaluate the obtained policy.
-The training can be took up with a saved model by calling the script with the word "load" as first argument.
+The training can be took up with a saved graph by calling the script with the word "load" as first argument.
 
 Author: Arthur Bouton [arthur.bouton@gadz.org]
 

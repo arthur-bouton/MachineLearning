@@ -2,6 +2,8 @@
 ** C++ binding of TensorFlow native C API to import a model and feed and
 ** retrieve unidimensional vectors.
 **
+** Tested with TensorFlow 2.3.1
+**
 ** You can check the input names of the model by executing in a terminal:
 **
 ** $ saved_model_cli show --dir <path_to_model_dir> --tag_set serve --signature_def serving_default

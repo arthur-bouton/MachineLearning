@@ -8,32 +8,32 @@
 
 ## Files
 
-- **[looptools.py](looptools.py)**: Tools to monitor, extract data and have control during algorithm progress loops. It contains:
+- [**looptools.py**](looptools.py): Tools to monitor, extract data and have control during algorithm progress loops. It contains:
 	- A context manager which allows the SIGINT signal to be processed asynchronously.
 	- A container-like class to plot variables incrementally on a persistent figure.
 	- An iterable class to extract numerical data from a file.
-- **[neural_networks.py](neural_networks.py)**: Implementation of scalable Multilayer Perceptron (MLP) and Radial Basis Function network (RBF) with numpy only.
-- **[sumtree_sampler.py](sumtree_sampler.py)**: A sum tree structure to efficiently sample items according to their relative priorities.
-- **[pendulum.py](pendulum.py)**: A simple pendulum to be controlled by a torque at its hinge.
-- **[cartpole.py](cartpole.py)**: A free pendulum mounted on a cart which can be controlled either via its lateral speed by means of an embedded feedback controller or by the lateral force applied to it.
-- **[CACLA_pendulum.py](CACLA_pendulum.py)**: Implementation of the Continuous Actor Critic Learning Automaton (CACLA) [1] to swing up a pendulum using only numpy.
+- [**neural_networks.py**](neural_networks.py): Implementation of scalable Multilayer Perceptron (MLP) and Radial Basis Function network (RBF) using only NumPy.
+- [**sumtree_sampler.py**](sumtree_sampler.py): A sum tree structure to efficiently sample items according to their relative priorities.
+- [**pendulum.py**](pendulum.py): A simple pendulum to be controlled by a torque at its hinge.
+- [**cartpole.py**](cartpole.py): A free pendulum mounted on a cart which can be controlled either via its lateral speed by means of an embedded feedback controller or by the lateral force applied to it.
+- [**CACLA_pendulum.py**](CACLA_pendulum.py): Implementation of the Continuous Actor-Critic Learning Automaton (CACLA) [1] to swing up a pendulum using only NumPy.
 - **Deep Deterministic Policy Gradient:**
-	- **[DDPG_vanilla.py](DDPG_vanilla.py)**: Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [2] with TensorFlow 1.
-	- **[DDPG_PER.py](DDPG_PER.py)**: Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [2] with TensorFlow 1 and enhanced with Prioritized Experience Replay (PER) [3].
-	- **[ddpg_pendulum.py](ddpg_pendulum.py)**: Training example of the DDPG algorithm to swing up the pendulum.
-	- **[ddpg_cartpole.py](ddpg_cartpole.py)**: Training example of the DDPG algorithm to swing up the cart-pole.
+	- [**DDPG_vanilla.py**](DDPG_vanilla.py): Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [2] using TensorFlow 1.
+	- [**DDPG_PER.py**](DDPG_PER.py): Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [2] using TensorFlow 1 and enhanced with Prioritized Experience Replay (PER) [3].
+	- [**ddpg_pendulum.py**](ddpg_pendulum.py): Training example of the DDPG algorithm to swing up the pendulum.
+	- [**ddpg_cartpole.py**](ddpg_cartpole.py): Training example of the DDPG algorithm to swing up the cart-pole.
 - **Proximal Policy Optimization:**
-	- **[PPO.py](PPO.py)**: Multithreaded implementation of the Proximal Policy Optimization (PPO) algorithm [4] with TensorFlow 1.
-	- **[ppo_pendulum.py](ppo_pendulum.py)**: Training example of the PPO algorithm to swing up the pendulum using multithreaded workers.
-	- **[ppo_cartpole.py](ppo_cartpole.py)**: Training example of the PPO algorithm to swing up the cart-pole using workers running in the main thread.
+	- [**PPO.py**](PPO.py): Multithreaded implementation of the Proximal Policy Optimization (PPO) algorithm [4] using TensorFlow 1.
+	- [**ppo_pendulum.py**](ppo_pendulum.py): Training example of the PPO algorithm to swing up the pendulum using multithreaded workers.
+	- [**ppo_cartpole.py**](ppo_cartpole.py): Training example of the PPO algorithm to swing up the cart-pole using workers running in the main thread.
 - **Soft Actor-Critic:**
-	- **[SAC.py](SAC.py)**: Implementation of the Soft Actor-Critic (SAC) algorithm with automated entropy temperature adjustment [5] with TensorFlow 2.
-	- **[sac_pendulum.py](sac_pendulum.py)**: Training example of the SAC algorithm to swing up the pendulum.
-	- **[sac_cartpole.py](sac_cartpole.py)**: Training example of the SAC algorithm to swing up the cart-pole.
-- **[tf_cpp_binding](tf_cpp_binding)**: Contains a C++ template class to bind TensorFlow native C API in order to easily import and use trained models.
-- **[LQR.py](LQR.py)**: Linear-Quadratic Regulators for finite or infinite horizons and continuous or discrete times.
-- **[lm_slsqp_cartpole.py](lm_slsqp_cartpole.py)**: Automated control synthesis to swing up a cart-pole for which the physical parameters are unknown. The parameter identification is performed by a non-linear regression, the trajectory planning is based on a direct collocation method using non-linear programming and the trajectory tracking is ensured by LQR control.
-- **[quadratures.py](quadratures.py)**: Contains a class providing Gauss-Lobatto quadratures and barycentric Lagrange interpolation.
+	- [**SAC.py**](SAC.py): Implementation of the Soft Actor-Critic (SAC) algorithm with automated entropy temperature adjustment [5] using TensorFlow 2.
+	- [**sac_pendulum.py**](sac_pendulum.py): Training example of the SAC algorithm to swing up the pendulum.
+	- [**sac_cartpole.py**](sac_cartpole.py): Training example of the SAC algorithm to swing up the cart-pole.
+- [**tf_cpp_binding**](tf_cpp_binding): Contains a C++ template class that provides a binding to TensorFlow native C API in order to easily import and use trained models.
+- [**LQR.py**](LQR.py): Linear-Quadratic Regulators for finite or infinite horizons and continuous or discrete times.
+- [**lm_slsqp_cartpole.py**](lm_slsqp_cartpole.py): Automated control synthesis to swing up a cart-pole for which the physical parameters are unknown. The parameter identification is performed by a non-linear regression, the trajectory planning is based on a direct collocation method using non-linear programming and the trajectory tracking is ensured by LQR control.
+- [**quadratures.py**](quadratures.py): Contains a class providing Gauss-Lobatto quadratures and barycentric Lagrange interpolation.
 
 [1] Van Hasselt, Hado, and Marco A. Wiering. "Reinforcement learning in continuous action spaces."<br />
     2007 IEEE International Symposium on Approximate Dynamic Programming and Reinforcement Learning. IEEE, 2007.<br />
