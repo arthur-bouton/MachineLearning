@@ -247,7 +247,7 @@ class SAC :
 		# Unbounded Gaussian action distributions:
 		u_distribs = tfp.distributions.Normal( a_dict['mu'], a_dict['sigma'], allow_nan_stats=False )
 		# Log-likelihood of the policy taking the squashing function into account:
-		log_pis = u_distribs.log_prob( a_dict['u'] ) - tf.reduce_sum( tf.math.log( 1 - tf.tanh( a_dict['u'] )**2 + 1e-6 ), axis=1, keepdims=True )
+		log_pis = tf.reduce_sum( u_distribs.log_prob( a_dict['u'] ) - tf.math.log( 1 - tf.tanh( a_dict['u'] )**2 + 1e-6 ), axis=1, keepdims=True )
 
 		if return_reg :
 			return a_dict['a'], log_pis, a_dict['reg']
