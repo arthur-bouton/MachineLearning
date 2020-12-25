@@ -269,7 +269,7 @@ class SAC :
 		next_Q_values = tf.reduce_min( next_Q_values_list, axis=0 )
 
 		# Compute the soft temporal difference:
-		Q_targets = rewards + self._variables['gamma']*( next_Q_values - self.get_alpha()*next_log_pis )*masks
+		Q_targets = rewards + self._variables['gamma']*( next_Q_values - self.alpha*next_log_pis )*masks
 
 		critic_losses = []
 		for critic in self.critics :
@@ -301,7 +301,7 @@ class SAC :
 			Q_values = tf.reduce_min( Q_values_list, axis=0 )
 
 			# Minimize the KL-divergence from the policy to the exponential of the soft Q-function:
-			actor_loss = tf.reduce_mean( self.get_alpha()*log_pis - Q_values )
+			actor_loss = tf.reduce_mean( self.alpha*log_pis - Q_values )
 			# Add the regularization from the actor network:
 			actor_loss += reg_loss
 
@@ -311,8 +311,9 @@ class SAC :
 		return actor_loss
 
 
+	@property
 	@tf.function
-	def get_alpha( self ) :
+	def alpha( self ) :
 		""" Return the positive-only entropy temperature """
 		return tf.math.softplus( self._alpha_unconstrained )
 
@@ -325,7 +326,7 @@ class SAC :
 		with tf.GradientTape() as tape :
 
 			# Constrain the average entropy of the policy to a desired minimum value:
-			alpha_loss = -self.get_alpha()*tf.reduce_mean( log_pis + self._variables['target_entropy'] )
+			alpha_loss = -self.alpha*tf.reduce_mean( log_pis + self._variables['target_entropy'] )
 
 		gradients = tape.gradient( alpha_loss, [ self._alpha_unconstrained ] )
 		self.alpha_optimizer.apply_gradients( zip( gradients, [ self._alpha_unconstrained ] ) )
@@ -380,6 +381,7 @@ class SAC :
 		return float( Q_loss )/iterations
 
 
+	@property
 	def n_iter( self ) :
 		return self._variables['n_iter']
 

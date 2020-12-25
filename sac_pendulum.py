@@ -157,9 +157,9 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 					_, _, ep_done, _ = eval_env.step( a )
 					if ep_done : break
 				stddev_m /= EP_LEN
-				alpha = float( sac.get_alpha() )
+				alpha = float( sac.alpha )
 				print( 'It %i | Ep %i | LQ %+7.4f | temp %5.3f | Sd %+5.2f | ' %
-				       ( sac.n_iter(), n_ep, Q_loss, alpha, stddev_m ), end='' )
+				       ( sac.n_iter, n_ep, Q_loss, alpha, stddev_m ), end='' )
 				eval_env.print_eval()
 				sys.stdout.flush()
 				reward_graph.add_data( n_ep, eval_env.get_Rt(), alpha )
