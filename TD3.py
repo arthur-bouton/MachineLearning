@@ -181,10 +181,10 @@ class TD3 :
 		actions = tf.cast( actions, tf.float32 )
 
 		if self._variables['state_scale'] is not None :
-			states = tf.divide( states, self._variables['state_scale'] )
+			states /= self._variables['state_scale']
 
 		if self._variables['action_scale'] is not None :
-			actions = tf.divide( actions, self._variables['action_scale'] )
+			actions /= self._variables['action_scale']
 
 		# Inference from the critic network:
 		Q_values = critic_model( [ states, actions ], training=training )
@@ -200,7 +200,7 @@ class TD3 :
 		states = tf.cast( states, tf.float32 )
 
 		if self._variables['state_scale'] is not None :
-			states = tf.divide( states, self._variables['state_scale'] )
+			states /= self._variables['state_scale']
 
 		if target :
 			# Inference from the actor target network:
@@ -210,7 +210,7 @@ class TD3 :
 			actions = self.actor( states, training=training )
 
 		if self._variables['action_scale'] is not None :
-			actions = tf.multiply( actions, self._variables['action_scale'] )
+			actions *= self._variables['action_scale']
 
 		if return_reg :
 			# Return the actor network regularization beside the actions:
@@ -233,7 +233,7 @@ class TD3 :
 		policy_noise = tf.random.normal( next_actions.shape, 0, self._variables['policy_reg_sigma'] )
 		policy_noise = tf.clip_by_value( policy_noise, -self._variables['policy_reg_bound'], self._variables['policy_reg_bound'] )
 		if self._variables['action_scale'] is not None :
-			policy_noise = tf.multiply( policy_noise, self._variables['action_scale'] )
+			policy_noise *= self._variables['action_scale']
 		next_actions += policy_noise
 
 		# Clipped double Q-learning:
