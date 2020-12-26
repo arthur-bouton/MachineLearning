@@ -1,4 +1,4 @@
-# Various machine learning scripts and tools
+# Various machine learning implementations and tools
 
 ![](cartpole_ppo_1.gif?raw=true "Starting from the same initial position it has been trained with") | ![](cartpole_ppo_2.gif?raw=true "Starting from a different position than the training one")
 :-:|:-:
@@ -17,17 +17,21 @@
 - [**pendulum.py**](pendulum.py): A simple pendulum to be controlled by a torque at its hinge.
 - [**cartpole.py**](cartpole.py): A free pendulum mounted on a cart which can be controlled either via its lateral speed by means of an embedded feedback controller or by the lateral force applied to it.
 - [**CACLA_pendulum.py**](CACLA_pendulum.py): Implementation of the Continuous Actor-Critic Learning Automaton (CACLA) [1] to swing up a pendulum using only NumPy.
-- **Deep Deterministic Policy Gradient:**
-	- [**DDPG_vanilla.py**](DDPG_vanilla.py): Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [2] using TensorFlow 1.
-	- [**DDPG_PER.py**](DDPG_PER.py): Implementation of the Deep Deterministic Policy Gradient (DDPG) algorithm [2] using TensorFlow 1 and enhanced with Prioritized Experience Replay (PER) [3].
+- **Deep Deterministic Policy Gradient (DDPG):**
+	- [**DDPG_vanilla.py**](DDPG_vanilla.py): Implementation of the Deep Deterministic Policy Gradient algorithm [2] using TensorFlow 1.
+	- [**DDPG_PER.py**](DDPG_PER.py): Implementation of the Deep Deterministic Policy Gradient algorithm [2] using TensorFlow 1 and enhanced with Prioritized Experience Replay (PER) [3].
 	- [**ddpg_pendulum.py**](ddpg_pendulum.py): Training example of the DDPG algorithm to swing up the pendulum.
 	- [**ddpg_cartpole.py**](ddpg_cartpole.py): Training example of the DDPG algorithm to swing up the cart-pole.
-- **Proximal Policy Optimization:**
-	- [**PPO.py**](PPO.py): Multithreaded implementation of the Proximal Policy Optimization (PPO) algorithm [4] using TensorFlow 1.
+- **Proximal Policy Optimization (PPO):**
+	- [**PPO.py**](PPO.py): Multithreaded implementation of the Proximal Policy Optimization algorithm [4] using TensorFlow 1.
 	- [**ppo_pendulum.py**](ppo_pendulum.py): Training example of the PPO algorithm to swing up the pendulum using multithreaded workers.
 	- [**ppo_cartpole.py**](ppo_cartpole.py): Training example of the PPO algorithm to swing up the cart-pole using workers running in the main thread.
-- **Soft Actor-Critic:**
-	- [**SAC.py**](SAC.py): Implementation of the Soft Actor-Critic (SAC) algorithm with automated entropy temperature adjustment [5] using TensorFlow 2.
+- **Twin Delayed Deep Deterministic policy gradient (TD3):**
+	- [**TD3.py**](TD3.py): Implementation of the Twin Delayed Deep Deterministic policy gradient algorithm [5] using TensorFlow 2.
+	- [**td3_pendulum.py**](td3_pendulum.py): Training example of the TD3 algorithm to swing up the pendulum.
+	- [**td3_cartpole.py**](td3_cartpole.py): Training example of the TD3 algorithm to swing up the cart-pole.
+- **Soft Actor-Critic (SAC):**
+	- [**SAC.py**](SAC.py): Implementation of the Soft Actor-Critic algorithm with automated entropy temperature adjustment [6] using TensorFlow 2.
 	- [**sac_pendulum.py**](sac_pendulum.py): Training example of the SAC algorithm to swing up the pendulum.
 	- [**sac_cartpole.py**](sac_cartpole.py): Training example of the SAC algorithm to swing up the cart-pole.
 - [**tf_cpp_binding**](tf_cpp_binding): Contains a C++ template class that provides a binding to TensorFlow native C API in order to easily import and use trained models.
@@ -40,7 +44,8 @@
 [2] Lillicrap, Timothy P., et al. "Continuous control with deep reinforcement learning." arXiv preprint arXiv:1509.02971 (2015).<br />
 [3] Schaul, Tom, et al. "Prioritized experience replay." arXiv preprint arXiv:1511.05952 (2015).<br />
 [4] Schulman, John, et al. "Proximal policy optimization algorithms." arXiv preprint arXiv:1707.06347 (2017).<br />
-[5] Haarnoja, Tuomas, et al. "Soft actor-critic algorithms and applications." arXiv preprint arXiv:1812.05905 (2018).
+[5] Fujimoto, Scott, Herke Van Hoof, and David Meger. "Addressing function approximation error in actor-critic methods." arXiv preprint arXiv:1802.09477 (2018).<br />
+[6] Haarnoja, Tuomas, et al. "Soft actor-critic algorithms and applications." arXiv preprint arXiv:1812.05905 (2018).
 
 
 ### Dependencies
