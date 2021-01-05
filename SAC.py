@@ -264,7 +264,7 @@ class SAC :
 		masks = tf.cast( tf.logical_not( batch['terminals'] ), tf.float32 )
 		next_states = batch['next_states']
 
-		next_actions, next_log_pis = self._get_actions_and_log_pis( next_states, sample=False )
+		next_actions, next_log_pis = self._get_actions_and_log_pis( next_states, sample=True )
 
 		# Clipped double Q-learning:
 		next_Q_values_list = [ self._infer_Q_values( critic['target_network'], next_states, next_actions ) for critic in self.critics ]
@@ -324,7 +324,7 @@ class SAC :
 	@tf.function
 	def _update_temperature( self, states ) :
 
-		actions, log_pis = self._get_actions_and_log_pis( states, sample=False )
+		actions, log_pis = self._get_actions_and_log_pis( states, sample=True )
 
 		with tf.GradientTape() as tape :
 
