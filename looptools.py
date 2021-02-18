@@ -176,7 +176,8 @@ class Monitor :
 				i_var = sum( n_var[:i] )
 				if n_var[i] > 1 :
 					i_end = min( len( labels ), i_var + n_var[i] )
-					ax.legend( self._lines[i_var:i_end], labels[i_var:i_end] )
+					if i_end > i_var :
+						ax.legend( self._lines[i_var:i_end], labels[i_var:i_end] )
 				elif len( labels ) > i_var :
 					ax.set_ylabel( labels[i_var] )
 
