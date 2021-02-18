@@ -229,6 +229,10 @@ class Monitor :
 			in their plot order.
 			Optionally, the corresponding x-axis value(s) can be specified as first argument. If not specified,
 			`xstep` is used as a gap between each x-axis value (1 by default).
+			If a y-axis value is None, the timestep is skipped for this variable and the line interpolates
+			between previous and next values.
+			If an x-axis value is None, all the lines for which the y-axis value is not None at this timestep
+			are broken.
 		update : bool, optional, default: True
 			Wether to update the figure away after to include the new data. If False, the figure can be updated
 			later with the method 'update()' so as to speed up the addition of data.
@@ -279,8 +283,8 @@ class Monitor :
 
 		# Update the plotted data:
 		for i, line in enumerate( self._lines ) :
-			line.set_xdata( self._xdata )
-			line.set_ydata( self._ydata[i] )
+			line.set_xdata( [ x for x, y in zip( self._xdata, self._ydata[i] ) if y is not None ] )
+			line.set_ydata( [ y for y in self._ydata[i] if y is not None ] )
 
 		# Adjust the bounds of the boxes:
 		i_line = 0
