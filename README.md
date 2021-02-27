@@ -36,6 +36,7 @@
 	- [**sac_cartpole.py**](sac_cartpole.py): Training example of the SAC algorithm to swing up the cart-pole.
 - **Deep learning:**
 	- [**cnn_single_target.py**](cnn_single_target.py): Deep neural network that detects and gives the coordinates and size of the biggest desired object in a picture.
+	- [**cnn_multi_targets.py**](cnn_multi_targets.py): Deep convolutional network that detects and gives the coordinates and size of all the occurrences of a desired object in a picture.
 - [**tf_cpp_binding**](tf_cpp_binding): Contains a C++ template class that provides a binding to TensorFlow native C API in order to easily import and use trained models.
 - [**LQR.py**](LQR.py): Linear-Quadratic Regulators for finite or infinite horizons and continuous or discrete times.
 - [**lm_slsqp_cartpole.py**](lm_slsqp_cartpole.py): Automated control synthesis to swing up a cart-pole for which the physical parameters are unknown. The parameter identification is performed by a non-linear regression, the trajectory planning is based on a direct collocation method using non-linear programming and the trajectory tracking is ensured by LQR control.
