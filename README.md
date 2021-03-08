@@ -1,9 +1,23 @@
 # Various machine learning implementations and tools
 
-![](cartpole_ppo_1.gif?raw=true "Starting from the same initial position it has been trained with") | ![](cartpole_ppo_2.gif?raw=true "Starting from a different position than the training one")
+![](illustrations/cartpole_ppo_1.gif?raw=true "Starting from the same initial position it has been trained with") | ![](illustrations/cartpole_ppo_2.gif?raw=true "Starting from a different position than the training one")
 :-:|:-:
 
-<p align="center"><i>Policy obtained by <a href="ppo_cartpole.py">ppo_cartpole.py</a> with the Proximal Policy Optimization algorithm implemented in <a href="PPO.py">PPO.py</a>.</i></p>
+<p align="center">
+	<i>Policy obtained by <a href="ppo_cartpole.py">ppo_cartpole.py</a> with the Proximal Policy Optimization algorithm implemented in <a href="PPO.py">PPO.py</a></i>
+</p>
+
+<br />
+
+
+![](illustrations/benchmark_pendulum.png?raw=true) | ![](illustrations/benchmark_cartpole.png?raw=true)
+:-:|:-:
+
+<p align="center">
+	<i>Benchmarks of my reinforcement learning algorithm implementations (code in the branch <code><a href="../../tree/benchmarks">benchmarks</a></code>)</i>
+</p>
+
+<br />
 
 
 ## Files

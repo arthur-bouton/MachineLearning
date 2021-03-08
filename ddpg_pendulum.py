@@ -118,7 +118,7 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 			for _ in range( EP_LEN ) :
 
 				# Choose an action:
-				if np.random.rand() < 0.1 :
+				if np.random.rand() < 0.5 :
 					exploration = not exploration
 					if exploration :
 						a = np.random.uniform( -1, 1, hyper_params['a_dim'] )
