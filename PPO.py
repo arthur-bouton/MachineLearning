@@ -105,7 +105,7 @@ class PPO() :
 	"""
 
 	def __init__( self, s_dim, a_dim, actor_def, critic_def, state_scale=None, action_scale=None,
-	              gamma=0.99, gae_lambda=0.95, epsilon=0.2, learning_rate=1e-4, vf_coeff=1, entropy_coeff=0.01,
+	              gamma=0.99, gae_lambda=0.95, epsilon=0.2, learning_rate=3e-4, vf_coeff=1, entropy_coeff=0.01,
 				  minibatch_size=64, epochs=200,
 				  summary_dir=None, seed=None, sess=None, single_thread=False ) :
 
@@ -269,7 +269,7 @@ class PPO() :
 			self.writer.add_summary( self.sess.run( self.wb_summary_op ), self.n_iter )
 			#self.writer.flush()
 
-		return Lt
+		return Lt/self.epochs
 
 	def _generalized_advantage_estimation( self, values, next_value, rewards, masks ) :
 		values = values + [next_value]
