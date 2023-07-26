@@ -124,7 +124,7 @@ class Monitor :
 
 	def __init__( self, n_var=1, labels=None, titles=None, xlabel=None, name=None, log=False, keep=True, xstep=1, datamax=None, zero=False, plot_kwargs=None ) :
 
-		if not isinstance( n_var, collections.Iterable ) : n_var = [ n_var ]
+		if not isinstance( n_var, collections.abc.Iterable ) : n_var = [ n_var ]
 
 		self._nvar = n_var
 		self.xstep = xstep
@@ -134,13 +134,13 @@ class Monitor :
 		# Create the figure:
 		self.fig, self.axes = plt.subplots( len( n_var ), sharex=True )
 
-		if not isinstance( self.axes, collections.Iterable ) : self.axes = [ self.axes ]
+		if not isinstance( self.axes, collections.abc.Iterable ) : self.axes = [ self.axes ]
 
 		# Name the figure window:
 		if name is not None :
-			self.fig.canvas.set_window_title( name )
+			self.fig.canvas.manager.set_window_title( name )
 		else :
-			self.fig.canvas.set_window_title( sys.argv[0] )
+			self.fig.canvas.manager.set_window_title( sys.argv[0] )
 
 		# Initialize the subplot(s):
 		self._xdata = []
@@ -190,7 +190,7 @@ class Monitor :
 		# Set logarithmic scale for the specified subplot(s):
 		if log :
 			for i, ax in enumerate( self.axes ) :
-				if log is True or log == i + 1 or isinstance( log, collections.Iterable ) and i + 1 in log :
+				if log is True or log == i + 1 or isinstance( log, collections.abc.Iterable ) and i + 1 in log :
 					ax.set_yscale( 'symlog' )
 
 		# Set the interactive mode so that the figure can be displayed without blocking:
@@ -246,7 +246,7 @@ class Monitor :
 			                   % ( n_y, n_y + 1, len( new_data ) ) )
 
 		# Make new_data a list of iterables:
-		new_data = [ [ values ] if not isinstance( values, collections.Iterable ) else values for values in new_data ]
+		new_data = [ [ values ] if not isinstance( values, collections.abc.Iterable ) else values for values in new_data ]
 
 		# Check the length of every argument:
 		for values in new_data :
@@ -289,7 +289,7 @@ class Monitor :
 		# Adjust the bounds of the boxes:
 		i_line = 0
 		for i_ax, ax in enumerate( self.axes ) :
-			if self.zero is True or self.zero == i_ax + 1 or isinstance( self.zero, collections.Iterable ) and i_ax + 1 in self.zero :
+			if self.zero is True or self.zero == i_ax + 1 or isinstance( self.zero, collections.abc.Iterable ) and i_ax + 1 in self.zero :
 				# Keep the zero axis in sight:
 				ax.relim()
 				i_line += self._nvar[i_ax]
@@ -353,7 +353,7 @@ class Monitor :
 		if isinstance( data, tuple ) and len( data ) == len( self._ydata ) + 1 :
 			self._xdata[key] = data[0]
 			y_values = data[1:]
-		elif not isinstance( data, collections.Iterable ) and isinstance( key, slice ) :
+		elif not isinstance( data, collections.abc.Iterable ) and isinstance( key, slice ) :
 			y_values = [ [ data ]*len( self._xdata[key] ) ]
 		elif not isinstance( data, tuple ) :
 			y_values = [ data ]
@@ -509,10 +509,10 @@ class Datafile :
 			self._columns = [ col - 1 if col > 0 else col for col in strange( columns ) ]
 		elif columns is not None :
 			# Unfold the iterables as a list of integers:
-			if not isinstance( columns, collections.Iterable ) :
+			if not isinstance( columns, collections.abc.Iterable ) :
 				columns = [ columns ]
 			for item in columns :
-				if not isinstance( item, collections.Iterable ) :
+				if not isinstance( item, collections.abc.Iterable ) :
 					item = [ item ]
 				for col in item :
 					if not isinstance( col, int ) :
