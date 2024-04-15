@@ -89,6 +89,31 @@ class Lobatto_quad :
 
 		return float( self.interpolation( x, self.dfq ) )
 
+	def derivative2( self, x ) :
+		"""
+		Compute the second derivative of the interpolating polynomial using barycentric Lagrange interpolation [1].
+
+		[1] Berrut, Jean-Paul, and Lloyd N. Trefethen. "Barycentric lagrange interpolation." SIAM review 46.3 (2004): 501-517.
+
+		"""
+
+		if not hasattr( self, 'dfq2' ) :
+			# Differentiation matrix:
+			n = len( self.fq )
+			D2 = np.zeros(( n, n ))
+			for i in range( n ) :
+				for j in range( n ) :
+					if i != j :
+						#D2[i][j] = -2*self.vq[j]/self.vq[i]/( self.tq[i] - self.tq[j] )*( sum( self.vq[k]/self.vq[i]/( self.tq[i] - self.tq[k] ) for k in range( n ) if k != i ) - 1/( self.tq[i] - self.tq[j] ) )
+						D2[i][j] = -2*self.vq[j]/self.vq[i]/( self.tq[i] - self.tq[j] )*sum( self.vq[k]/self.vq[i]/( self.tq[i] - self.tq[k] ) - 1/( self.tq[i] - self.tq[j] ) for k in range( n ) if k != i )
+			D2 -= np.diag( sum( D2.T ) )
+
+			# Differentiation of the polynomial interpolants:
+			self.dfq2 = D2@self.fq
+			#self.dfq2 = D2@self.fq*2/self.delta_x
+
+		return float( self.interpolation( x, self.dfq2 ) )
+
 	lobatto_roots = {
 		1: [
 				1
