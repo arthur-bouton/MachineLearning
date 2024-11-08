@@ -8,7 +8,7 @@ setup(
 	license='GPL-3.0',
 	author='Arthur Bouton',
 	author_email='arthur.bouton@gadz.org',
-	url='https://github.com/Bouty92/MachineLearning',
+	url='https://github.com/arthur-bouton/MachineLearning',
 	py_modules=[ 'looptools' ],
 	install_requires=[ 'matplotlib>=1.5.1' ]
 )
