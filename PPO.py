@@ -10,7 +10,8 @@ Author: Arthur Bouton [arthur.bouton@gadz.org]
 Dependency:
 tensorflow 1.13.1
 """
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 import numpy as np
 import random
 import collections
@@ -314,7 +315,7 @@ class PPO() :
 
 				for transitions in trial_generator( worker_id ) :
 
-					if len( transitions ) == 5 and not isinstance( transitions[2], collections.Iterable ) :
+					if len( transitions ) == 5 and not isinstance( transitions[2], collections.abc.Iterable ) :
 						transitions = [ transitions ]
 
 					for s, a, r, terminal, s_next in transitions :
@@ -433,7 +434,7 @@ class PPO() :
 		if not hasattr( self, 'ep_buf' ) :
 			self.ep_buf = { 's': [], 'a': [], 'r': [], 'v': [], 'm': [], 's_next': None }
 
-		if len( transitions ) == 5 and not isinstance( transitions[2], collections.Iterable ) :
+		if len( transitions ) == 5 and not isinstance( transitions[2], collections.abc.Iterable ) :
 			transitions = [ transitions ]
 
 		for s, a, r, terminal, self.ep_buf['s_next'] in transitions :

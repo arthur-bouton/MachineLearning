@@ -25,7 +25,7 @@ from tensorflow.keras import layers
 # Default actor network:
 def actor_model_def( s_dim, a_dim ) :
 
-	states = keras.Input( shape=s_dim )
+	states = keras.Input( shape=(s_dim,) )
 
 	x = layers.Dense( 256, activation='relu' )( states )
 	x = layers.Dense( 256, activation='relu' )( x )
@@ -43,8 +43,8 @@ def actor_model_def( s_dim, a_dim ) :
 # Default critic network:
 def critic_model_def( s_dim, a_dim ) :
 
-	states  = keras.Input( shape=s_dim )
-	actions = keras.Input( shape=a_dim )
+	states  = keras.Input( shape=(s_dim,) )
+	actions = keras.Input( shape=(a_dim,) )
 
 	x = layers.Concatenate()( [ states, actions ] )
 	x = layers.Dense( 256, activation='relu' )( x )
@@ -280,7 +280,7 @@ class SAC :
 				Q_values, reg_loss = self._infer_Q_values( critic['network'], states, actions, return_reg=True, training=True )
 
 				# Minimize the soft Bellman residual:
-				critic_loss = 0.5*tf.reduce_mean( tf.losses.mean_squared_error( Q_targets, Q_values ) )
+				critic_loss = 0.5*tf.reduce_mean( tf.losses.MeanSquaredError()( Q_targets, Q_values ) )
 				# Add the regularization from the critic network:
 				critic_loss += reg_loss
 
@@ -437,21 +437,19 @@ class SAC :
 			return pickle.load( f )
 
 
-	def save( self, directory, hdf5=False, optimizers=True ) :
-
-		extension = '.hdf5' if hdf5 else ''
+	def save( self, directory, extension='keras', optimizers=True ) :
 
 		# Save the actor model and its optimizer:
-		self.actor.save( directory + '/actor' + extension )
+		self.actor.save( directory + '/actor.' + extension )
 		if optimizers :
 			self._save_optimizer( self.actor_optimizer, directory + '/actor_optimizer' )
 
 		# Save the critic models and their optimizers:
 		for i, critic in enumerate( self.critics ) :
-			critic['network'].save( directory + '/critic_%i%s' % ( i + 1, extension ) )
-			critic['target_network'].save( directory + '/critic_%i_target%s' % ( i + 1, extension ) )
+			critic['network'].save( f'{directory}/critic_{i + 1}.{extension}' )
+			critic['target_network'].save( f'{directory}/critic_{i + 1}_target.{extension}' )
 			if optimizers :
-				self._save_optimizer( critic['optimizer'], directory + '/critic_%i_optimizer' % ( i + 1 ) )
+				self._save_optimizer( critic['optimizer'], f'{directory}/critic_{i + 1}_optimizer' )
 
 		# Save the temperature optimizer:
 		if optimizers :
@@ -465,21 +463,19 @@ class SAC :
 			yaml.dump( self._variables, f )
 
 
-	def load( self, directory, hdf5=False, optimizers=True ) :
-
-		extension = '.hdf5' if hdf5 else ''
+	def load( self, directory, extension='keras', optimizers=True ) :
 
 		# Load the actor model and its optimizer:
-		self.actor = keras.models.load_model( directory + '/actor' + extension, compile=False )
+		self.actor = keras.models.load_model( directory + '/actor.' + extension, compile=False )
 		if optimizers :
 			self.actor_optimizer = self._load_optimizer( directory + '/actor_optimizer' )
 
 		# Load the critic models and their optimizers:
 		for i, critic in enumerate( self.critics ) :
-			critic['network'] = keras.models.load_model( directory + '/critic_%i%s' % ( i + 1, extension ), compile=False )
-			critic['target_network'] = keras.models.load_model( directory + '/critic_%i_target%s' % ( i + 1, extension ), compile=False )
+			critic['network'] = keras.models.load_model( f'{directory}/critic_{i + 1}.{extension}', compile=False )
+			critic['target_network'] = keras.models.load_model( f'{directory}/critic_{i + 1}_target.{extension}', compile=False )
 			if optimizers :
-				critic['optimizer'] = self._load_optimizer( directory + '/critic_%i_optimizer' % ( i + 1 ) )
+				critic['optimizer'] = self._load_optimizer( f'{directory}/critic_{i + 1}_optimizer' )
 
 		# Load the temperature optimizer:
 		if optimizers :

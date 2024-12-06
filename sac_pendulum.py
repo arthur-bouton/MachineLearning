@@ -30,7 +30,7 @@ from tensorflow.keras import layers
 # Actor network:
 def actor( s_dim, a_dim ) :
 
-	states = keras.Input( shape=s_dim )
+	states = keras.Input( shape=(s_dim,) )
 
 	x = layers.Dense( 100, activation='relu' )( states )
 	y = layers.Dense( 100, activation='relu' )( x )
@@ -47,8 +47,8 @@ def actor( s_dim, a_dim ) :
 # Critic network:
 def critic( s_dim, a_dim ) :
 
-	states  = keras.Input( shape=s_dim )
-	actions = keras.Input( shape=a_dim )
+	states  = keras.Input( shape=(s_dim,) )
+	actions = keras.Input( shape=(a_dim,) )
 
 	x = layers.Concatenate()( [ states, actions ] )
 	x = layers.Dense( 100, activation='relu' )( x )

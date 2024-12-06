@@ -26,7 +26,7 @@ from tensorflow.keras import layers
 
 def actor( s_dim, a_dim ) :
 
-	states = keras.Input( shape=s_dim )
+	states = keras.Input( shape=(s_dim,) )
 
 	x = layers.Dense( 400, activation='relu' )( states )
 	x = layers.Dense( 400, activation='relu' )( x )
@@ -43,8 +43,8 @@ def actor( s_dim, a_dim ) :
 
 def critic( s_dim, a_dim ) :
 
-	states  = keras.Input( shape=s_dim )
-	actions = keras.Input( shape=a_dim )
+	states  = keras.Input( shape=(s_dim,) )
+	actions = keras.Input( shape=(a_dim,) )
 
 	x = layers.Concatenate()( [ states, actions ] )
 	x = layers.Dense( 400, activation='relu' )( x )

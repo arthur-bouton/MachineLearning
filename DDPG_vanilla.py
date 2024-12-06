@@ -8,7 +8,8 @@ Author: Arthur Bouton [arthur.bouton@gadz.org]
 Dependency:
 tensorflow 1.13.1
 """
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 import numpy as np
 from collections import deque
 import random

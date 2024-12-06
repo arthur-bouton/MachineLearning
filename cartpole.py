@@ -133,7 +133,7 @@ class Cartpole() :
 			return
 
 		fig, ax = subplots( 4, sharex=True )
-		fig.canvas.set_window_title( title if title is not None else 'Cartpole trial (state)' )
+		fig.canvas.manager.set_window_title( title if title is not None else 'Cartpole trial (state)' )
 		ax[0].set_ylabel( u'$u$' )
 		ax[0].plot( self.t_data[1:], self.u_data, 'r' )
 		ax[0].plot( self.t_data, [ x[1] for x in self.x_data ] )

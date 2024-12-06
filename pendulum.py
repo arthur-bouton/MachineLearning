@@ -111,7 +111,7 @@ class Pendulum() :
 			return
 
 		fig, ax = subplots( 3, sharex=True )
-		fig.canvas.set_window_title( title if title is not None else 'Pendulum trial' )
+		fig.canvas.manager.set_window_title( title if title is not None else 'Pendulum trial' )
 		ax[0].set_ylabel( 'u' )
 		ax[0].plot( self.t_data[:-1], self.u_data )
 		if self.include_stddev and plot_stddev :

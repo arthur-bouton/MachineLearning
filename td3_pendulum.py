@@ -30,7 +30,7 @@ from tensorflow.keras import layers
 # Actor network:
 def actor( s_dim, a_dim ) :
 
-	states = keras.Input( shape=s_dim )
+	states = keras.Input( shape=(s_dim,) )
 
 	x = layers.Dense( 100, activation='relu' )( states )
 	x = layers.Dense( 100, activation='relu' )( x )
@@ -43,8 +43,8 @@ def actor( s_dim, a_dim ) :
 # Critic network:
 def critic( s_dim, a_dim ) :
 
-	states  = keras.Input( shape=s_dim )
-	actions = keras.Input( shape=a_dim )
+	states  = keras.Input( shape=(s_dim,) )
+	actions = keras.Input( shape=(a_dim,) )
 
 	x = layers.Concatenate()( [ states, actions ] )
 	x = layers.Dense( 100, activation='relu' )( x )
@@ -127,7 +127,7 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 				if np.random.rand() < 0.5 :
 					exploration = not exploration
 					if exploration :
-						a = np.random.uniform( -1, 1, hyper_params['a_dim'] )
+						a = np.random.uniform( -1, 1, hyper_params['a_dim'] ).squeeze()
 				if not exploration :
 					a = td3.get_action( s )
 

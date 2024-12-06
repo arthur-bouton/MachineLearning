@@ -121,7 +121,7 @@ if len( sys.argv ) == 1 or sys.argv[1] != 'eval' :
 				if np.random.rand() < 0.5 :
 					exploration = not exploration
 					if exploration :
-						a = np.random.uniform( -1, 1, hyper_params['a_dim'] )
+						a = np.random.uniform( -1, 1, hyper_params['a_dim'] ).squeeze()
 				if not exploration :
 					a = ddpg.get_action( s )
 
