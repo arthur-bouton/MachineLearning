@@ -29,6 +29,8 @@ data_dir = 'training_data/' + script_name + '/' + data_id
 # Suggested dynamics of the system, for which the parameter values are to be determined:
 n_params = 5
 def f_dynamics( x, t, f, params ) :
+	f = np.array( f ).item()
+
 	g  = params[0]
 	mp = params[1]
 	mc = params[2]
@@ -251,7 +253,7 @@ for i in range( len( f_list ) - 1 ) :
 		#u = ud # Open loop
 		err_data.append( x - xd )
 		f_data.append( u )
-		_, _, ep_done, _ = env.step( u )
+		_, _, ep_done, _ = env.step( u.item() )
 		x = env.get_obs()
 		if ep_done : break
 	if ep_done : break
@@ -263,7 +265,7 @@ x_list = [ x_list[i] + ( x_list[i+1] - x_list[i] )*j/isteps for i in range( len(
 x_list = x_list[:len( env.x_data )]
 
 fig, ax = plt.subplots( 4, sharex=True )
-fig.canvas.set_window_title( 'Trajectory' )
+fig.canvas.manager.set_window_title( 'Trajectory' )
 ax[0].plot( env.t_data, [ xd[0] for xd in x_list ] )
 ax[0].plot( env.t_data, [ x[0] for x in env.x_data ] )
 ax[0].legend( [ u'$x_{traj}$', u'$x_{trial}$' ] )
@@ -280,7 +282,7 @@ for i in range( 4 ) :
 	ax[i].grid( True )
 
 fig, ax = plt.subplots()
-fig.canvas.set_window_title( 'Control' )
+fig.canvas.manager.set_window_title( 'Control' )
 ax.plot( env.t_data[:-1], [ fd for fd in f_list for j in range( isteps ) ][:len( env.x_data )-1] ) # ZOH
 #ax.plot( env.t_data[:-1], [ f_list[i] + ( f_list[i+1] - f_list[i] )*j/isteps for i in range( len( f_list ) - 1 ) for j in range( isteps ) ][:len( env.x_data )-1] ) # FOH
 ax.plot( env.t_data[:-1], [ f for f in f_data ] )
@@ -288,7 +290,7 @@ ax.legend( [ u'$f_{traj}$', u'$f_{trial}$' ] )
 ax.grid( True )
 
 fig, ax = plt.subplots( 4, sharex=True )
-fig.canvas.set_window_title( 'Controller gains' )
+fig.canvas.manager.set_window_title( 'Controller gains' )
 ax[0].plot( env.t_data[:-1], [ k[0][0] for k in K for j in range( isteps ) ][:len( env.x_data )-1] )
 ax[1].plot( env.t_data[:-1], [ k[0][1] for k in K for j in range( isteps ) ][:len( env.x_data )-1] )
 ax[2].plot( env.t_data[:-1], [ k[0][2] for k in K for j in range( isteps ) ][:len( env.x_data )-1] )
@@ -301,7 +303,7 @@ for i in range( 4 ) :
 	ax[i].grid( True )
 
 fig, ax = plt.subplots( 4, sharex=True )
-fig.canvas.set_window_title( 'Tracking errors' )
+fig.canvas.manager.set_window_title( 'Tracking errors' )
 ax[0].plot( env.t_data[:-1], [ e[0] for e in err_data ] )
 ax[1].plot( env.t_data[:-1], [ e[1] for e in err_data ] )
 ax[2].plot( env.t_data[:-1], [ e[2] for e in err_data ] )
