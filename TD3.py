@@ -366,31 +366,8 @@ class TD3 :
 
 		return tf.squeeze( V_value ).numpy()
 
-	
-	def _save_optimizer( self, optimizer, filename ) :
-		with open( filename + '.pkl', 'wb' ) as f :
-			pickle.dump( optimizer, f )
 
-
-	def _load_optimizer( self, filename ) :
-		with open( filename + '.pkl', 'rb' ) as f :
-			return pickle.load( f )
-
-
-	def save( self, directory, extension='keras', optimizers=True ) :
-
-		# Save the actor model, its optimizer and its target network:
-		self.actor.save( directory + '/actor.' + extension )
-		if optimizers :
-			self._save_optimizer( self.actor_optimizer, directory + '/actor_optimizer' )
-		self.actor_target_network.save( directory + '/actor_target.' + extension )
-
-		# Save the critic models and their optimizers:
-		for i, critic in enumerate( self.critics ) :
-			critic['network'].save( f'{directory}/critic_{i + 1}.{extension}' )
-			critic['target_network'].save( f'{directory}/critic_{i + 1}_target.{extension}' )
-			if optimizers :
-				self._save_optimizer( critic['optimizer'], f'{directory}/critic_{i + 1}_optimizer' )
+	def save_variables( self, directory ) :
 
 		# Save the internal variables:
 		with open( directory + '/variables.yaml', 'w' ) as f :
@@ -398,20 +375,7 @@ class TD3 :
 			yaml.dump( self._variables, f )
 
 
-	def load( self, directory, extension='keras', optimizers=True ) :
-
-		# Load the actor model, its optimizer and its target network:
-		self.actor = keras.models.load_model( directory + '/actor.' + extension, compile=False )
-		if optimizers :
-			self.actor_optimizer = self._load_optimizer( directory + '/actor_optimizer' )
-		self.actor_target_network = keras.models.load_model( directory + '/actor_target.' + extension, compile=False )
-
-		# Load the critic models and their optimizers:
-		for i, critic in enumerate( self.critics ) :
-			critic['network'] = keras.models.load_model( f'{directory}/critic_{i + 1}.{extension}', compile=False )
-			critic['target_network'] = keras.models.load_model( f'{directory}/critic_{i + 1}_target.{extension}', compile=False )
-			if optimizers :
-				critic['optimizer'] = self._load_optimizer( f'{directory}/critic_{i + 1}_optimizer' )
+	def load_variables( self, directory ) :
 
 		# Load the internal variables:
 		with open( directory + '/variables.yaml', 'r' ) as f :
@@ -419,8 +383,62 @@ class TD3 :
 
 		# Update the optimizers' learning rates:
 		self.actor_optimizer.learning_rate = self._variables['actor_lr']
-		for ciritc in self.critics :
+		for critic in self.critics :
 			critic['optimizer'].learning_rate = self._variables['critic_lr']
+
+
+	def save( self, directory, extension='keras' ) :
+
+		# Save the actor model and its target network:
+		self.actor.save( directory + '/actor.' + extension )
+		self.actor_target_network.save( directory + '/actor_target.' + extension )
+
+		# Save the critic models:
+		for i, critic in enumerate( self.critics ) :
+			critic['network'].save( f'{directory}/critic_{i + 1}.{extension}' )
+			critic['target_network'].save( f'{directory}/critic_{i + 1}_target.{extension}' )
+
+		# Save the internal variables:
+		self.save_variables( directory )
+
+
+	def load( self, directory, extension='keras' ) :
+
+		# Load the actor model and its target network:
+		self.actor = keras.models.load_model( directory + '/actor.' + extension, compile=False )
+		self.actor_target_network = keras.models.load_model( directory + '/actor_target.' + extension, compile=False )
+
+		# Load the critic models:
+		for i, critic in enumerate( self.critics ) :
+			critic['network'] = keras.models.load_model( f'{directory}/critic_{i + 1}.{extension}', compile=False )
+			critic['target_network'] = keras.models.load_model( f'{directory}/critic_{i + 1}_target.{extension}', compile=False )
+
+		# Load the internal variables:
+		self.load_variables( directory )
+
+
+	def save_weights_only( self, directory ) :
+
+		# Save the actor model and its target network:
+		self.actor.save_weights( directory + '/actor.weights.h5' )
+		self.actor_target_network.save_weights( directory + '/actor_target.weights.h5' )
+
+		# Save the critic models:
+		for i, critic in enumerate( self.critics ) :
+			critic['network'].save_weights( f'{directory}/critic_{i + 1}.weights.h5' )
+			critic['target_network'].save_weights( f'{directory}/critic_{i + 1}_target.weights.h5' )
+
+
+	def load_weights_only( self, directory ) :
+
+		# Load the actor model and its target network:
+		self.actor.load_weights( directory + '/actor.weights.h5' )
+		self.actor_target_network.load_weights( directory + '/actor_target.weights.h5' )
+
+		# Load the critic models:
+		for i, critic in enumerate( self.critics ) :
+			critic['network'].load_weights( f'{directory}/critic_{i + 1}.weights.h5' )
+			critic['target_network'].load_weights( f'{directory}/critic_{i + 1}_target.weights.h5' )
 
 
 	def save_replay_buffer( self, filename ) :
