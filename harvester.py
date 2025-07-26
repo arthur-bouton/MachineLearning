@@ -82,7 +82,17 @@ class Harvester() :
                 if verbose :
                     print(f'Waiting for connection... ', end='', flush=True)
 
-                conn, addr = worker['socket'].accept()
+                worker['socket'].settimeout(1)
+
+                while True :
+                    try :
+                        conn, addr = worker['socket'].accept()
+                    except TimeoutError :
+                        if worker['proc'].poll() is not None :
+                            raise RuntimeError(f'Worker {worker["proc"].pid} died before establishing the connection')
+                    else :
+                        break
+
                 conn.setblocking(False)
 
                 worker['connection'] = conn
