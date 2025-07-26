@@ -9,7 +9,6 @@ Dependency:
 tensorflow 2.3.1
 """
 import tensorflow as tf
-import tensorflow_probability as tfp
 import numpy as np
 from collections import deque
 import random
