@@ -15,6 +15,7 @@ import random
 from tqdm import trange
 import pickle
 import yaml
+from collections.abc import Iterable
 
 
 from tensorflow import keras
@@ -94,6 +95,9 @@ class TD3 :
 		Function defining the critic model.
 		It has to take the dimension of the state and the action spaces
 		as inputs and return a Keras model.
+	state_noise : float or list of floats, optional, default: None
+		A scalar or a vector of standard deviation for the Gaussian noise
+		to add to each component of the state when sampling the experience.
 	seed : int, optional, default: None
 		Random seed for the initialization of random generators.
 
@@ -115,7 +119,7 @@ class TD3 :
 				  learning_rate=1e-3, actor_lr=None, critic_lr=None,
 				  policy_update_delay=2, policy_reg_sigma=0.2, policy_reg_bound=0.5,
 				  actor_def=actor_model_def, critic_def=critic_model_def,
-				  seed=None ) :
+				  state_noise=None, seed=None ) :
 
 		self._variables = {}
 		self._variables['gamma'] = gamma
@@ -139,9 +143,15 @@ class TD3 :
 		# Instantiate the replay buffer:
 		self.replay_buffer = deque( maxlen=int( buffer_size ) )
 
+		# Define the noise to add to each state component when sampling experience:
+		if state_noise is not None and not isinstance( state_noise, Iterable ) :
+			state_noise = [ state_noise ]
+		self._variables['state_noise'] = state_noise
+
 		# Set the different random seeds:
 		random.seed( seed )
 		tf.random.set_seed( seed )
+		np.random.seed( seed )
 
 
 		# Define the scaling factors:
@@ -303,6 +313,13 @@ class TD3 :
 		batch['rewards']     = np.array( [ [ _[2] ] for _ in raw_batch ] )
 		batch['terminals']   = np.array( [ [ _[3] ] for _ in raw_batch ] )
 		batch['next_states'] = np.array( [ _[4] for _ in raw_batch ] )
+
+		# Add noise to the states:
+		if self._variables['state_noise'] is not None :
+			state_noise = np.random.standard_normal(( len( raw_batch ), len( self._variables['state_noise'] ) ))*self._variables['state_noise']
+			batch['states'] += state_noise
+			state_noise = np.random.standard_normal(( len( raw_batch ), len( self._variables['state_noise'] ) ))*self._variables['state_noise']
+			batch['next_states'] += state_noise
 
 		return batch
 
