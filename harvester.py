@@ -48,8 +48,16 @@ class Harvester() :
             harvester_ip: str='localhost',
             stdout: bool=False,
             stderr: bool=False,
+            respawn: bool=False,
             verbose: bool=True
         ) -> None :
+
+        spawn_args = {}
+        spawn_args['harvester_ip'] = harvester_ip
+        spawn_args['stdout'] = stdout
+        spawn_args['stderr'] = stderr
+        spawn_args['respawn'] = respawn
+        spawn_args['verbose'] = verbose
 
         new_workers = []
 
@@ -75,7 +83,9 @@ class Harvester() :
                            stderr=(None if stderr else subprocess.DEVNULL)
                        )
 
-                new_workers.append({'proc': proc, 'socket': sock, 'port': port})
+                spawn_args['bash_commands'] = [command]
+
+                new_workers.append({'proc': proc, 'socket': sock, 'port': port, 'spawn_args': spawn_args})
 
             for worker in new_workers :
 
@@ -118,7 +128,7 @@ class Harvester() :
 
         harvest = []
 
-        workers_to_remove = []
+        dead_workers = []
 
         for worker in self._workers :
             try :
@@ -128,7 +138,7 @@ class Harvester() :
                     if not data_chunk : # Connection lost
                         if verbose :
                             print(f'Connection lost with worker {worker["proc"].pid}', file=sys.stderr)
-                        workers_to_remove.append(worker)
+                        dead_workers.append(worker)
                         break
                     data_bytes += data_chunk
             except BlockingIOError : # Nothing more to read
@@ -150,10 +160,11 @@ class Harvester() :
             except EOFError : # End of the data stream
                 pass
 
-        for worker in workers_to_remove :
+        # Remove the dead workers from the list and spawn new ones if required to:
+        for worker in dead_workers :
+            if worker['spawn_args']['respawn'] :
+                self.spawn_workers(**worker['spawn_args'])
             self._workers.remove(worker)
-            if verbose :
-                print(f'Worker {worker["proc"].pid} removed')
 
         return harvest
 
